@@ -42,6 +42,12 @@ export class DashboardService {
 
     const overallAttendanceRate = expectedAttendance > 0 ? (present / expectedAttendance) * 100 : 0;
 
+    const recentAttendance = await Attendance.find()
+      .sort({ updatedAt: -1 })
+      .limit(5)
+      .populate('studentId', 'name')
+      .lean();
+
     return {
       totalStudents,
       totalLabs,
@@ -51,7 +57,8 @@ export class DashboardService {
       recordedAttendance,
       present,
       absent,
-      overallAttendanceRate: Number(overallAttendanceRate.toFixed(2))
+      overallAttendanceRate: Number(overallAttendanceRate.toFixed(2)),
+      recentAttendance
     };
   }
 
