@@ -1,0 +1,21 @@
+{
+  "summary": {
+    "totalFiles": 3,
+    "filesWithFileJSDoc": 3,
+    "filesWithFunctionJSDoc": 3,
+    "filesMissingFileJSDoc": 0,
+    "filesMissingFunctionJSDoc": 0
+  },
+  "hasFileJSDoc": [
+    "jest.config.js",
+    "scaffold_models.js",
+    "test_uri.js"
+  ],
+  "missingFileJSDoc": [],
+  "hasFunctionJSDoc": [
+    "jest.config.js",
+    "scaffold_models.js",
+    "test_uri.js"
+  ],
+  "missingFunctionJSDoc": []
+}

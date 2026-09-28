@@ -1,0 +1,6 @@
+- feat(foundation): Refactored errorMiddleware, added AppError, asyncHandler, attendanceCalc, types, validators
+- feat(auth): Implemented Authentication & Authorization with StaffUser model, authService, and middleware
+- feat(core): Implemented Core Entities with Lab, Student, Day models, CRUD services, controllers, and routes
+- feat(attendance): Implemented Attendance model, bulk upsert logic, validation, endpoints
+- feat(dashboard): Implemented Dashboard & Analytics with aggregation pipelines, overview, day/lab/student stats
+- feat(core): Completed Hardening & Polish: Integrate routes in app.ts, seed script, security hardening, final tests
