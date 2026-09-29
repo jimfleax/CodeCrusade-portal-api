@@ -53,9 +53,12 @@ export class DashboardService {
       .populate('studentId', 'name')
       .lean();
 
+    const activeLabs = await Lab.countDocuments({ active: true });
+
     return {
       totalStudents,
       totalLabs,
+      activeLabs,
       daysCreated,
       daysCompleted,
       expectedAttendance,
