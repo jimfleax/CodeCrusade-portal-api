@@ -1,4 +1,0 @@
-- [ ] Create `src/services/dashboard.service.ts` to implement aggregation logic.
-- [ ] Create `src/controllers/dashboard.controller.ts` to wrap service calls.
-- [ ] Create `src/routes/dashboard.routes.ts` and set up routes with auth middleware.
-- [ ] Integrate into `src/app.ts` (maybe, depending on how others are included; will check).

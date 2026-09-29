@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/AppError';
+import { AuthenticationError, ForbiddenError } from '../utils/errors';
 import { authService } from '../services/authService';
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(new AppError(401, 'UNAUTHORIZED', 'Authentication required'));
+      return next(new AuthenticationError('Authentication required'));
     }
 
     const token = authHeader.split(' ')[1];
@@ -22,11 +22,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return next(new AppError(401, 'UNAUTHORIZED', 'Authentication required'));
+      return next(new AuthenticationError('Authentication required'));
     }
     
     if (!roles.includes(req.user.role)) {
-      return next(new AppError(403, 'FORBIDDEN', 'Insufficient permissions'));
+      return next(new ForbiddenError('Insufficient permissions'));
     }
     
     next();

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Student, { IStudent } from '../models/Student';
 import Attendance from '../models/Attendance';
-import { AppError } from '../utils/AppError';
+import { NotFoundError } from '../utils/errors';
 
 import { APIFeatures } from '../utils/apiFeatures';
 
@@ -20,11 +20,29 @@ export const getStudents = async (queryString: any = {}) => {
   features.paginate();
   const students = await features.query.populate('labId');
   
+  const studentIds = students.map((s: any) => s._id);
+  const attendanceStats = await Attendance.aggregate([
+    { $match: { student: { $in: studentIds } } },
+    { $group: { 
+      _id: '$student', 
+      total: { $sum: 1 }, 
+      present: { $sum: { $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0] } } 
+    } }
+  ]);
+  const statsMap = new Map(attendanceStats.map(s => [s._id.toString(), s]));
+
+  const enrichedStudents = students.map((s: any) => {
+    const sDoc = s.toJSON ? s.toJSON() : s;
+    const stat = statsMap.get(s._id.toString());
+    const attendanceRate = stat && stat.total > 0 ? (stat.present / stat.total) * 100 : 0;
+    return { ...sDoc, attendanceRate: Number(attendanceRate.toFixed(2)) };
+  });
+  
   const page = parseInt(queryString.page as string, 10) || 1;
   const limit = parseInt(queryString.limit as string, 10) || 10;
   
   return {
-    data: students,
+    data: enrichedStudents,
     meta: {
       total,
       page,
@@ -36,19 +54,19 @@ export const getStudents = async (queryString: any = {}) => {
 
 export const getStudentById = async (id: string) => {
   const student = await Student.findById(id).populate('labId');
-  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student not found');
+  if (!student) throw new NotFoundError('Student not found');
   return student;
 };
 
 export const updateStudent = async (id: string, data: Partial<IStudent>) => {
   const student = await Student.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student not found');
+  if (!student) throw new NotFoundError('Student not found');
   return student;
 };
 
 export const deleteStudent = async (id: string) => {
   const student = await Student.findById(id);
-  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student not found');
+  if (!student) throw new NotFoundError('Student not found');
   
   const session = await mongoose.startSession();
   try {

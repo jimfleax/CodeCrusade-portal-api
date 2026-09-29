@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/AppError';
+import { ValidationError } from '../utils/errors';
 
 export const validateRequest = (schema: any) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -14,7 +14,7 @@ export const validateRequest = (schema: any) => {
       if (error?.issues || error?.errors) {
         const errs = error.issues || error.errors || [];
         const message = errs.map((err: any) => err.message).join(', ');
-        return next(new AppError(400, 'VALIDATION_ERROR', message));
+        return next(new ValidationError(message));
       }
       return next(error);
     }

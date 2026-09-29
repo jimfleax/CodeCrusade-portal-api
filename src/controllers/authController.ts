@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authService } from '../services/authService';
 import { z } from 'zod';
-import { AppError } from '../utils/AppError';
+import { ValidationError } from '../utils/errors';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -12,7 +12,7 @@ const loginSchema = z.object({
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const parseResult = loginSchema.safeParse(req.body);
   if (!parseResult.success) {
-    throw new AppError(400, 'VALIDATION_ERROR', 'Invalid email or password format');
+    throw new ValidationError('Invalid email or password format');
   }
 
   const { email, password } = parseResult.data;

@@ -30,3 +30,7 @@ coverage/
 # Automated Agent/Workflow artifacts
 .agent/
 .specs/
+
+# Scripts and Temp folders
+scripts/
+temp/

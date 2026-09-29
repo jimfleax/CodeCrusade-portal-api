@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import Attendance from '../models/Attendance';
 import Student from '../models/Student';
 import Day from '../models/Day';
-import { AppError } from '../utils/AppError';
+import { ValidationError, NotFoundError } from '../utils/errors';
 
 import { APIFeatures } from '../utils/apiFeatures';
 
@@ -39,7 +39,7 @@ export const getAttendances = async (queryString: any = {}) => {
 
 export const getAttendanceById = async (id: string) => {
   const attendance = await Attendance.findById(id).populate('studentId dayId markedBy updatedBy');
-  if (!attendance) throw new AppError(404, 'NOT_FOUND', 'Attendance not found');
+  if (!attendance) throw new NotFoundError('Attendance not found');
   return attendance;
 };
 
@@ -54,21 +54,21 @@ export const getDayAttendance = async (dayId: string) => {
 export const bulkUpsertAttendance = async (dayId: string, attendanceData: { studentId: string; status: 'PRESENT' | 'ABSENT' }[], staffUserId: string) => {
   // Validate day exists
   const day = await Day.findById(dayId);
-  if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
-  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Attendance is frozen for this day');
+  if (!day) throw new NotFoundError('Day not found');
+  if (day.status === 'COMPLETED') throw new ValidationError('Attendance is frozen for this day');
 
   // Validate no duplicates in payload
   const studentIds = attendanceData.map(a => a.studentId);
   const uniqueStudentIds = new Set(studentIds);
   if (uniqueStudentIds.size !== studentIds.length) {
-    throw new AppError(400, 'BAD_REQUEST', 'Duplicate student IDs in payload');
+    throw new ValidationError('Duplicate student IDs in payload');
   }
 
 
   
   const studentsFromDb = await Student.find({ _id: { $in: studentIds } });
   if (studentsFromDb.length !== uniqueStudentIds.size) {
-    throw new AppError(400, 'BAD_REQUEST', 'One or more invalid student IDs in payload');
+    throw new ValidationError('One or more invalid student IDs in payload');
   }
 
   // Bulk upsert
@@ -89,10 +89,10 @@ export const bulkUpsertAttendance = async (dayId: string, attendanceData: { stud
 
 export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string) => {
   const attendance = await Attendance.findById(id).populate('dayId');
-  if (!attendance) throw new AppError(404, 'NOT_FOUND', 'Attendance not found');
+  if (!attendance) throw new NotFoundError('Attendance not found');
   
   if ((attendance.dayId as any).status === 'COMPLETED') {
-    throw new AppError(400, 'BAD_REQUEST', 'Attendance is frozen for this day');
+    throw new ValidationError('Attendance is frozen for this day');
   }
   
   attendance.status = status;
@@ -104,8 +104,8 @@ export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT',
 
 export const markMissingAsAbsent = async (dayId: string, staffUserId: string) => {
   const day = await Day.findById(dayId);
-  if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
-  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Day is frozen');
+  if (!day) throw new NotFoundError('Day not found');
+  if (day.status === 'COMPLETED') throw new ValidationError('Day is frozen');
 
   const allStudents = await Student.find({}, '_id');
   const existingRecords = await Attendance.find({ dayId }, 'studentId');

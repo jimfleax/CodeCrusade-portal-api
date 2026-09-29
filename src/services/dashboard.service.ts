@@ -3,7 +3,7 @@ import Day from '../models/Day';
 import Student from '../models/Student';
 import Lab from '../models/Lab';
 import Attendance from '../models/Attendance';
-import { AppError } from '../utils/AppError';
+import { ValidationError, NotFoundError } from '../utils/errors';
 
 export class DashboardService {
   static async getOverview() {
@@ -229,12 +229,12 @@ export class DashboardService {
 
   static async getStudent(studentId: string) {
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
-      throw new AppError(400, 'BAD_REQUEST', 'Invalid student ID');
+      throw new ValidationError('Invalid student ID');
     }
 
     const student = await Student.findById(studentId).populate('labId', 'name').lean();
     if (!student) {
-      throw new AppError(404, 'NOT_FOUND', 'Student not found');
+      throw new NotFoundError('Student not found');
     }
 
     const attendances = await Attendance.aggregate([
