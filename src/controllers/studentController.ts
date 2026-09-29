@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import * as studentService from '../services/studentService';
+import { cache } from '../utils/cache';
 
 export const createStudent = asyncHandler(async (req: Request, res: Response) => {
   const { rollNo, name, email, branch, labId } = req.body;
   const student = await studentService.createStudent({ rollNo, name, email, branch, labId });
+  cache.delPattern(/analytics|dashboard/);
   res.status(201).json({ status: 'success', data: student });
 });
 
@@ -32,11 +34,13 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
   if (branch) data.branch = branch;
   if (labId) data.labId = labId;
   const student = await studentService.updateStudent(req.params.id as string, data);
+  cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ status: 'success', data: student });
 });
 
 export const deleteStudent = asyncHandler(async (req: Request, res: Response) => {
   await studentService.deleteStudent(req.params.id as string);
+  cache.delPattern(/analytics|dashboard/);
   res.status(204).send();
 });
 

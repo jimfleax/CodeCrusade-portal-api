@@ -1,38 +1,69 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { DashboardService } from '../services/dashboard.service';
+import { cache } from '../utils/cache';
 
 export const getOverview = asyncHandler(async (req: Request, res: Response) => {
+  const cacheKey = `dashboard:overview:${req.originalUrl}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
+
   const data = await DashboardService.getOverview();
+  cache.set(cacheKey, data);
   res.status(200).json({ success: true, data });
 });
 
 export const getDays = asyncHandler(async (req: Request, res: Response) => {
+  const cacheKey = `dashboard:days:${req.originalUrl}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
+
   const data = await DashboardService.getDays();
+  cache.set(cacheKey, data);
   res.status(200).json({ success: true, data });
 });
 
 export const getLabs = asyncHandler(async (req: Request, res: Response) => {
+  const cacheKey = `dashboard:labs:${req.originalUrl}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
+
   const dayId = req.query.dayId as string | undefined;
   const data = await DashboardService.getLabs(dayId);
+  cache.set(cacheKey, data);
   res.status(200).json({ success: true, data });
 });
 
 export const getStudent = asyncHandler(async (req: Request, res: Response) => {
+  const cacheKey = `dashboard:student:${req.originalUrl}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
+
   const studentId = req.params.studentId as string;
   const data = await DashboardService.getStudent(studentId);
+  cache.set(cacheKey, data);
   res.status(200).json({ success: true, data });
 });
 
 export const getMatrix = asyncHandler(async (req: Request, res: Response) => {
+  const cacheKey = `dashboard:matrix:${req.originalUrl}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
+
   const labId = req.query.labId as string | undefined;
   const branch = req.query.branch as string | undefined;
   const dayId = req.query.dayId as string | undefined;
   const data = await DashboardService.getMatrix(labId, branch, dayId);
+  cache.set(cacheKey, data);
   res.status(200).json({ success: true, data });
 });
 
 export const getDistribution = asyncHandler(async (req: Request, res: Response) => {
+  const cacheKey = `dashboard:distribution:${req.originalUrl}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
+
   const data = await DashboardService.getDistribution();
+  cache.set(cacheKey, data);
   res.status(200).json({ success: true, data });
 });

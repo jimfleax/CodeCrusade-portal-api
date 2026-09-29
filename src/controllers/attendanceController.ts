@@ -7,6 +7,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import * as attendanceService from '../services/attendanceService';
+import { cache } from '../utils/cache';
 
 export const getAttendances = asyncHandler(async (req: Request, res: Response) => {
   const result = await attendanceService.getAttendances(req.query);
@@ -31,12 +32,14 @@ export const getDayAttendance = asyncHandler(async (req: Request, res: Response)
 export const bulkUpsertAttendance = asyncHandler(async (req: Request, res: Response) => {
   const staffUserId = (req as any).user._id || (req as any).user.id;
   const result = await attendanceService.bulkUpsertAttendance(req.params.dayId as string, req.body.attendanceData, staffUserId);
+  cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ success: true, data: result });
 });
 
 export const updateAttendance = asyncHandler(async (req: Request, res: Response) => {
   const staffUserId = (req as any).user._id || (req as any).user.id;
   const result = await attendanceService.updateAttendance(req.params.id as string, req.body.status, staffUserId);
+  cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ success: true, data: result });
 });
 
@@ -44,5 +47,6 @@ export const markMissingAsAbsent = asyncHandler(async (req: Request, res: Respon
   const staffUserId = (req as any).user._id || (req as any).user.id;
   const { labId } = req.body || {};
   const result = await attendanceService.markMissingAsAbsent(req.params.dayId as string, staffUserId, labId);
+  cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ success: true, data: result });
 });
