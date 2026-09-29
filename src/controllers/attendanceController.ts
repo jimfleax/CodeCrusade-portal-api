@@ -9,13 +9,8 @@ import { asyncHandler } from '../utils/asyncHandler';
 import * as attendanceService from '../services/attendanceService';
 
 export const getAttendances = asyncHandler(async (req: Request, res: Response) => {
-  const { dayId, studentId, status } = req.query;
-  const filters: any = {};
-  if (dayId) filters.dayId = dayId;
-  if (studentId) filters.studentId = studentId;
-  if (status) filters.status = status;
-  const data = await attendanceService.getAttendances(filters);
-  res.status(200).json({ success: true, data });
+  const result = await attendanceService.getAttendances(req.query);
+  res.status(200).json({ success: true, data: result.data, meta: result.meta });
 });
 
 export const getAttendanceById = asyncHandler(async (req: Request, res: Response) => {

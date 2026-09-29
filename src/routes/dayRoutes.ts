@@ -18,7 +18,7 @@ const validateDay = [
 router.get('/', authorize('SUPER_ADMIN', 'COORDINATOR'), dayController.getDays);
 router.get('/:id', authorize('SUPER_ADMIN', 'COORDINATOR'), dayController.getDayById);
 
-router.post('/', authorize('SUPER_ADMIN'), validateDay, dayController.createDay);
+router.post('/', authorize('SUPER_ADMIN', 'COORDINATOR'), validateDay, dayController.createDay);
 router.put('/:id', authorize('SUPER_ADMIN'), dayController.updateDay);
 router.delete('/:id', authorize('SUPER_ADMIN'), dayController.deleteDay);
 

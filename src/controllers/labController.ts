@@ -9,11 +9,8 @@ export const createLab = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getLabs = asyncHandler(async (req: Request, res: Response) => {
-  const { active } = req.query;
-  const query: any = {};
-  if (active !== undefined) query.active = active;
-  const labs = await labService.getLabs(query);
-  res.status(200).json({ status: 'success', data: labs });
+  const result = await labService.getLabs(req.query);
+  res.status(200).json({ status: 'success', data: result.data, meta: result.meta });
 });
 
 export const getLabById = asyncHandler(async (req: Request, res: Response) => {

@@ -10,8 +10,31 @@ import Student from '../models/Student';
 import Day from '../models/Day';
 import { AppError } from '../utils/AppError';
 
-export const getAttendances = async (filters: any) => {
-  return Attendance.find(filters).populate('studentId dayId markedBy updatedBy');
+import { APIFeatures } from '../utils/apiFeatures';
+
+export const getAttendances = async (queryString: any = {}) => {
+  const features = new APIFeatures(Attendance.find(), queryString)
+    .filter()
+    .sort('-createdAt')
+    .limitFields();
+
+  const total = await Attendance.countDocuments(features.query.getFilter());
+  
+  features.paginate();
+  const attendances = await features.query.populate('studentId dayId markedBy updatedBy');
+  
+  const page = parseInt(queryString.page as string, 10) || 1;
+  const limit = parseInt(queryString.limit as string, 10) || 10;
+  
+  return {
+    data: attendances,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 };
 
 export const getAttendanceById = async (id: string) => {
@@ -47,6 +70,10 @@ export const bulkUpsertAttendance = async (dayId: string, attendanceData: { stud
     throw new AppError(400, 'BAD_REQUEST', 'One or more invalid student IDs in payload');
   }
 
+  const totalStudents = await Student.countDocuments();
+  if (totalStudents !== uniqueStudentIds.size) {
+    throw new AppError(400, 'BAD_REQUEST', 'Not all students are included in the payload');
+  }
   // Bulk upsert
   const bulkOps = attendanceData.map(record => ({
     updateOne: {

@@ -2,12 +2,35 @@ import Lab, { ILab } from '../models/Lab';
 import Student from '../models/Student';
 import { AppError } from '../utils/AppError';
 
+import { APIFeatures } from '../utils/apiFeatures';
+
 export const createLab = async (data: Partial<ILab>) => {
   return await Lab.create(data);
 };
 
-export const getLabs = async (query: any = {}) => {
-  return await Lab.find(query);
+export const getLabs = async (queryString: any = {}) => {
+  const features = new APIFeatures(Lab.find(), queryString)
+    .filter()
+    .sort()
+    .limitFields();
+
+  const total = await Lab.countDocuments(features.query.getFilter());
+  
+  features.paginate();
+  const labs = await features.query;
+  
+  const page = parseInt(queryString.page as string, 10) || 1;
+  const limit = parseInt(queryString.limit as string, 10) || 10;
+  
+  return {
+    data: labs,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 };
 
 export const getLabById = async (id: string) => {

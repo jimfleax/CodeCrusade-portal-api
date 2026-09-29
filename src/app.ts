@@ -18,6 +18,9 @@ connectDB();
 
 const app: Application = express();
 
+// Trust proxy for express-rate-limit when behind reverse proxies like Vercel
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));

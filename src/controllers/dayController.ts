@@ -9,11 +9,8 @@ export const createDay = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getDays = asyncHandler(async (req: Request, res: Response) => {
-  const { status } = req.query;
-  const query: any = {};
-  if (status) query.status = status;
-  const days = await dayService.getDays(query);
-  res.status(200).json({ status: 'success', data: days });
+  const result = await dayService.getDays(req.query);
+  res.status(200).json({ status: 'success', data: result.data, meta: result.meta });
 });
 
 export const getDayById = asyncHandler(async (req: Request, res: Response) => {

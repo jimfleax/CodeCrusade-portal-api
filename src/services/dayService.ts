@@ -2,14 +2,37 @@ import Day, { IDay } from '../models/Day';
 import Attendance from '../models/Attendance';
 import { AppError } from '../utils/AppError';
 
+import { APIFeatures } from '../utils/apiFeatures';
+
 export const createDay = async (data: Partial<IDay>) => {
   const existing = await Day.findOne({ dayNumber: data.dayNumber });
   if (existing) throw new AppError(400, 'BAD_REQUEST', 'Day number already exists');
   return await Day.create(data);
 };
 
-export const getDays = async (query: any = {}) => {
-  return await Day.find(query).sort({ dayNumber: 1 });
+export const getDays = async (queryString: any = {}) => {
+  const features = new APIFeatures(Day.find(), queryString)
+    .filter()
+    .sort('title')
+    .limitFields();
+
+  const total = await Day.countDocuments(features.query.getFilter());
+  
+  features.paginate();
+  const days = await features.query;
+  
+  const page = parseInt(queryString.page as string, 10) || 1;
+  const limit = parseInt(queryString.limit as string, 10) || 10;
+  
+  return {
+    data: days,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 };
 
 export const getDayById = async (id: string) => {

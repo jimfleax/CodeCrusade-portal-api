@@ -9,12 +9,8 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getStudents = asyncHandler(async (req: Request, res: Response) => {
-  const { branch, labId } = req.query;
-  const query: any = {};
-  if (branch) query.branch = branch;
-  if (labId) query.labId = labId;
-  const students = await studentService.getStudents(query);
-  res.status(200).json({ status: 'success', data: students });
+  const result = await studentService.getStudents(req.query);
+  res.status(200).json({ status: 'success', data: result.data, meta: result.meta });
 });
 
 export const getStudentById = asyncHandler(async (req: Request, res: Response) => {
