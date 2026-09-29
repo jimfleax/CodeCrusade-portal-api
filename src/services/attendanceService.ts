@@ -70,10 +70,6 @@ export const bulkUpsertAttendance = async (dayId: string, attendanceData: { stud
     throw new AppError(400, 'BAD_REQUEST', 'One or more invalid student IDs in payload');
   }
 
-  const totalStudents = await Student.countDocuments();
-  if (totalStudents !== uniqueStudentIds.size) {
-    throw new AppError(400, 'BAD_REQUEST', 'Not all students are included in the payload');
-  }
   // Bulk upsert
   const bulkOps = attendanceData.map(record => ({
     updateOne: {

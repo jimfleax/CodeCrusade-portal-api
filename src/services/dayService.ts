@@ -13,7 +13,7 @@ export const createDay = async (data: Partial<IDay>) => {
 export const getDays = async (queryString: any = {}) => {
   const features = new APIFeatures(Day.find(), queryString)
     .filter()
-    .sort('title')
+    .sort('-createdAt')
     .limitFields();
 
   const total = await Day.countDocuments(features.query.getFilter());
