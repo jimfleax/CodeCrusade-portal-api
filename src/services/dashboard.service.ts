@@ -150,7 +150,7 @@ export class DashboardService {
     const labTotals = new Map(labStats.map(ls => [ls._id?.toString(), ls.total]));
 
     // Fetch day for lab freeze info
-    const day = dayId ? await Day.findById(dayId).lean() : null;
+    const day = (dayId && mongoose.Types.ObjectId.isValid(dayId)) ? await Day.findById(dayId).lean() : null;
     const frozenLabIds = new Set((day?.labFreezes ?? []).map((f: any) => f.labId.toString()));
 
     const atts = await Attendance.aggregate([
