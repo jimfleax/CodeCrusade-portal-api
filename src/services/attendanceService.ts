@@ -55,6 +55,7 @@ export const bulkUpsertAttendance = async (dayId: string, attendanceData: { stud
   // Validate day exists
   const day = await Day.findById(dayId);
   if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
+  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Attendance is frozen for this day');
 
   // Validate no duplicates in payload
   const studentIds = attendanceData.map(a => a.studentId);
@@ -87,8 +88,12 @@ export const bulkUpsertAttendance = async (dayId: string, attendanceData: { stud
 };
 
 export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string) => {
-  const attendance = await Attendance.findById(id);
+  const attendance = await Attendance.findById(id).populate('dayId');
   if (!attendance) throw new AppError(404, 'NOT_FOUND', 'Attendance not found');
+  
+  if ((attendance.dayId as any).status === 'COMPLETED') {
+    throw new AppError(400, 'BAD_REQUEST', 'Attendance is frozen for this day');
+  }
   
   attendance.status = status;
   attendance.updatedBy = new mongoose.Types.ObjectId(staffUserId);
@@ -97,10 +102,10 @@ export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT',
   return attendance;
 };
 
-export const freezeAttendance = async (dayId: string, staffUserId: string) => {
+export const markMissingAsAbsent = async (dayId: string, staffUserId: string) => {
   const day = await Day.findById(dayId);
   if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
-  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Day is already completed/frozen');
+  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Day is frozen');
 
   const allStudents = await Student.find({}, '_id');
   const existingRecords = await Attendance.find({ dayId }, 'studentId');
@@ -109,21 +114,28 @@ export const freezeAttendance = async (dayId: string, staffUserId: string) => {
   const missingStudents = allStudents.filter(s => !existingStudentIds.has(s._id.toString()));
 
   if (missingStudents.length > 0) {
-    const bulkOps = missingStudents.map(student => ({
-      insertOne: {
-        document: {
-          studentId: student._id,
-          dayId: new mongoose.Types.ObjectId(dayId),
-          status: 'ABSENT',
-          markedBy: new mongoose.Types.ObjectId(staffUserId)
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+      const bulkOps = missingStudents.map(student => ({
+        insertOne: {
+          document: {
+            studentId: student._id,
+            dayId: new mongoose.Types.ObjectId(dayId),
+            status: 'ABSENT',
+            markedBy: new mongoose.Types.ObjectId(staffUserId)
+          }
         }
-      }
-    }));
-    await Attendance.bulkWrite(bulkOps);
+      }));
+      await Attendance.bulkWrite(bulkOps, { session });
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 
-  day.status = 'COMPLETED';
-  await day.save();
-
-  return { frozenCount: missingStudents.length };
+  return { markedCount: missingStudents.length };
 };

@@ -40,8 +40,8 @@ export const updateAttendance = asyncHandler(async (req: Request, res: Response)
   res.status(200).json({ success: true, data: result });
 });
 
-export const freezeAttendance = asyncHandler(async (req: Request, res: Response) => {
+export const markMissingAsAbsent = asyncHandler(async (req: Request, res: Response) => {
   const staffUserId = (req as any).user._id || (req as any).user.id;
-  const result = await attendanceService.freezeAttendance(req.params.dayId as string, staffUserId);
+  const result = await attendanceService.markMissingAsAbsent(req.params.dayId as string, staffUserId);
   res.status(200).json({ success: true, data: result });
 });

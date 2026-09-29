@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Student, { IStudent } from '../models/Student';
 import Attendance from '../models/Attendance';
 import { AppError } from '../utils/AppError';
@@ -49,6 +50,16 @@ export const deleteStudent = async (id: string) => {
   const student = await Student.findById(id);
   if (!student) throw new AppError(404, 'NOT_FOUND', 'Student not found');
   
-  await Attendance.deleteMany({ studentId: id });
-  await student.deleteOne();
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+    await Attendance.deleteMany({ studentId: id }).session(session);
+    await student.deleteOne({ session });
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };

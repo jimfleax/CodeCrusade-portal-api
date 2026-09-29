@@ -22,4 +22,7 @@ router.post('/', authorize('SUPER_ADMIN', 'COORDINATOR'), validateDay, dayContro
 router.put('/:id', authorize('SUPER_ADMIN'), dayController.updateDay);
 router.delete('/:id', authorize('SUPER_ADMIN'), dayController.deleteDay);
 
+router.post('/:id/freeze', authorize('SUPER_ADMIN', 'COORDINATOR'), dayController.freezeDay);
+router.post('/:id/unfreeze', authorize('SUPER_ADMIN', 'COORDINATOR'), dayController.unfreezeDay);
+
 export default router;

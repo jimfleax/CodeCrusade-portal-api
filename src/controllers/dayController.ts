@@ -32,3 +32,13 @@ export const deleteDay = asyncHandler(async (req: Request, res: Response) => {
   await dayService.deleteDay(req.params.id as string);
   res.status(204).send();
 });
+
+export const freezeDay = asyncHandler(async (req: Request, res: Response) => {
+  const day = await dayService.freezeDay(req.params.id as string);
+  res.status(200).json({ status: 'success', data: day });
+});
+
+export const unfreezeDay = asyncHandler(async (req: Request, res: Response) => {
+  const day = await dayService.unfreezeDay(req.params.id as string);
+  res.status(200).json({ status: 'success', data: day });
+});

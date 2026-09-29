@@ -32,7 +32,7 @@ router.get('/student/:studentId', authorize('SUPER_ADMIN', 'COORDINATOR'), atten
 router.get('/day/:dayId', authorize('SUPER_ADMIN', 'COORDINATOR'), attendanceController.getDayAttendance);
 
 router.put('/day/:dayId', authorize('SUPER_ADMIN', 'COORDINATOR'), validateBulkUpsert, attendanceController.bulkUpsertAttendance);
-router.post('/day/:dayId/freeze', authorize('SUPER_ADMIN', 'COORDINATOR'), attendanceController.freezeAttendance);
+router.post('/day/:dayId/mark-missing-absent', authorize('SUPER_ADMIN', 'COORDINATOR'), attendanceController.markMissingAsAbsent);
 router.patch('/:id', authorize('SUPER_ADMIN', 'COORDINATOR'), validateUpdate, attendanceController.updateAttendance);
 
 export default router;

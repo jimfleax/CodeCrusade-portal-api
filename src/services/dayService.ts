@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Day, { IDay } from '../models/Day';
 import Attendance from '../models/Attendance';
 import { AppError } from '../utils/AppError';
@@ -42,6 +43,9 @@ export const getDayById = async (id: string) => {
 };
 
 export const updateDay = async (id: string, data: Partial<IDay>) => {
+  if (data.status) {
+    delete data.status; // status must be updated via explicit freeze/unfreeze endpoints
+  }
   if (data.dayNumber) {
     const existing = await Day.findOne({ dayNumber: data.dayNumber, _id: { $ne: id } });
     if (existing) throw new AppError(400, 'BAD_REQUEST', 'Day number already exists');
@@ -55,6 +59,36 @@ export const deleteDay = async (id: string) => {
   const day = await Day.findById(id);
   if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
   
-  await Attendance.deleteMany({ dayId: id });
-  await day.deleteOne();
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+    await Attendance.deleteMany({ dayId: id }).session(session);
+    await day.deleteOne({ session });
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+export const freezeDay = async (id: string) => {
+  const day = await Day.findById(id);
+  if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
+  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Day is already frozen');
+  
+  day.status = 'COMPLETED';
+  await day.save();
+  return day;
+};
+
+export const unfreezeDay = async (id: string) => {
+  const day = await Day.findById(id);
+  if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
+  if (day.status === 'ACTIVE') throw new AppError(400, 'BAD_REQUEST', 'Day is already active');
+  
+  day.status = 'ACTIVE';
+  await day.save();
+  return day;
 };
