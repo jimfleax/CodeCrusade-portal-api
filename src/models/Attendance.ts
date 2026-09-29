@@ -32,5 +32,9 @@ AttendanceSchema.index({ studentId: 1, dayId: 1 }, { unique: true });
 AttendanceSchema.index({ dayId: 1 });
 AttendanceSchema.index({ status: 1 });
 AttendanceSchema.index({ markedBy: 1 });
+AttendanceSchema.index({ createdAt: -1 });
+AttendanceSchema.index({ updatedAt: -1 });
+AttendanceSchema.index({ dayId: 1, status: 1 });
+AttendanceSchema.index({ studentId: 1, status: 1 });
 
 export default mongoose.model<IAttendance>('Attendance', AttendanceSchema);
