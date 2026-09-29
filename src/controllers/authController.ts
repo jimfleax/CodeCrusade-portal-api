@@ -5,18 +5,18 @@ import { z } from 'zod';
 import { ValidationError } from '../utils/errors';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1),
   password: z.string().min(1)
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const parseResult = loginSchema.safeParse(req.body);
   if (!parseResult.success) {
-    throw new ValidationError('Invalid email or password format');
+    throw new ValidationError('Invalid username or password format');
   }
 
-  const { email, password } = parseResult.data;
-  const { user, token } = await authService.login(email, password);
+  const { username, password } = parseResult.data;
+  const { user, token } = await authService.login(username, password);
 
   res.status(200).json({
     success: true,
@@ -24,7 +24,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       user: {
         _id: user._id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         role: user.role
       },
       token
@@ -47,7 +47,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
       user: {
         _id: user._id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         role: user.role
       }
     }

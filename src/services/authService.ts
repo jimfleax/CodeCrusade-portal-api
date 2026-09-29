@@ -5,10 +5,10 @@ import { AuthenticationError } from '../utils/errors';
 import { config } from '../config/env';
 
 export const authService = {
-  async login(email: string, password: string):Promise<{ user: IStaffUser, token: string }> {
-    const user = await StaffUser.findOne({ email }).select('+passwordHash');
+  async login(username: string, password: string):Promise<{ user: IStaffUser, token: string }> {
+    const user = await StaffUser.findOne({ username }).select('+passwordHash');
     if (!user) {
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError('Invalid username or password');
     }
     if (!user.active) {
       throw new AuthenticationError('User account is inactive');
@@ -16,7 +16,7 @@ export const authService = {
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError('Invalid username or password');
     }
 
     const token = jwt.sign(
