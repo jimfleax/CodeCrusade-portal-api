@@ -42,6 +42,11 @@ export class DashboardService {
 
     const overallAttendanceRate = expectedAttendance > 0 ? (present / expectedAttendance) * 100 : 0;
 
+    const latestDay = await Day.findOne().sort({ createdAt: -1 });
+    const presentToday = latestDay 
+      ? await Attendance.countDocuments({ dayId: latestDay._id, status: 'PRESENT' }) 
+      : 0;
+
     const recentAttendance = await Attendance.find()
       .sort({ updatedAt: -1 })
       .limit(5)
@@ -57,6 +62,7 @@ export class DashboardService {
       recordedAttendance,
       present,
       absent,
+      presentToday,
       overallAttendanceRate: Number(overallAttendanceRate.toFixed(2)),
       recentAttendance
     };
