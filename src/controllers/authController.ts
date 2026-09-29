@@ -40,7 +40,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
-  const user = req.user;
+  const user = (req as any).user;
   res.status(200).json({
     success: true,
     data: {

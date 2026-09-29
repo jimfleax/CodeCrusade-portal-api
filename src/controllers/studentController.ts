@@ -33,3 +33,8 @@ export const deleteStudent = asyncHandler(async (req: Request, res: Response) =>
   await studentService.deleteStudent(req.params.id as string);
   res.status(204).send();
 });
+
+export const getBranches = asyncHandler(async (req: Request, res: Response) => {
+  const branches = await studentService.getBranches();
+  res.status(200).json({ status: 'success', data: branches });
+});

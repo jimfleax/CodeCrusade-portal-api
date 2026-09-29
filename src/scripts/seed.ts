@@ -88,12 +88,12 @@ async function seedStaffUsers(): Promise<mongoose.Types.ObjectId[]> {
     const passwordHash = await bcrypt.hash(s.password, saltRounds);
     const user = await StaffUser.create({
       name: s.name,
-      email: s.email,
+      username: s.email.split("@")[0],
       passwordHash,
       role: s.role,
       active: true,
     });
-    ids.push(user._id as mongoose.Types.ObjectId);
+    ids.push((user as any)._id as mongoose.Types.ObjectId);
     console.log(`  + StaffUser created: ${s.name} (${s.role}) — email: ${s.email}, password: ${s.password}`);
   }
 

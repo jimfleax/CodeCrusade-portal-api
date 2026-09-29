@@ -17,6 +17,7 @@ const validateStudent = [
   validateRequest
 ];
 
+router.get('/metadata/branches', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.getBranches);
 router.get('/', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.getStudents);
 router.get('/:id', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.getStudentById);
 

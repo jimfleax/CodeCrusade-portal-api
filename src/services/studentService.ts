@@ -81,3 +81,8 @@ export const deleteStudent = async (id: string) => {
     session.endSession();
   }
 };
+
+export const getBranches = async () => {
+  const branches = await Student.distinct('branch');
+  return branches.filter(b => b); // remove empty or null
+};

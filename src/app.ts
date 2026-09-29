@@ -17,6 +17,7 @@ import routes from './routes';
 connectDB();
 
 const app: Application = express();
+app.set('query parser', 'extended');
 
 // Trust proxy for express-rate-limit when behind reverse proxies like Vercel
 app.set('trust proxy', 1);
