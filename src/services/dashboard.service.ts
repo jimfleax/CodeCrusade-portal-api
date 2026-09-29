@@ -83,17 +83,8 @@ export class DashboardService {
     
     const dayAttendances = await Attendance.aggregate([
       {
-        $lookup: {
-          from: 'students',
-          localField: 'studentId',
-          foreignField: '_id',
-          as: 'student'
-        }
-      },
-      { $unwind: '$student' },
-      {
         $group: {
-          _id: { dayId: '$dayId', labId: '$student.labId' },
+          _id: { dayId: '$dayId', labId: '$labId' },
           present: { $sum: { $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0] } },
           absent: { $sum: { $cond: [{ $eq: ['$status', 'ABSENT'] }, 1, 0] } }
         }
@@ -165,17 +156,8 @@ export class DashboardService {
     const atts = await Attendance.aggregate([
       { $match: matchStage },
       {
-        $lookup: {
-          from: 'students',
-          localField: 'studentId',
-          foreignField: '_id',
-          as: 'student'
-        }
-      },
-      { $unwind: '$student' },
-      {
         $group: {
-          _id: { labId: '$student.labId', dayId: '$dayId' },
+          _id: { labId: '$labId', dayId: '$dayId' },
           present: { $sum: { $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0] } },
           absent: { $sum: { $cond: [{ $eq: ['$status', 'ABSENT'] }, 1, 0] } }
         }
@@ -247,29 +229,32 @@ export class DashboardService {
       throw new NotFoundError('Student not found');
     }
 
-    const attendances = await Attendance.aggregate([
-      { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
-      {
-        $lookup: {
-          from: 'days',
-          localField: 'dayId',
-          foreignField: '_id',
-          as: 'day'
-        }
-      },
-      { $unwind: '$day' },
-      { $sort: { 'day.dayNumber': 1 } }
-    ]);
+    const attendances = await Attendance.find({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
+
+    const dayIds = attendances.map(a => a.dayId);
+    const days = await Day.find({ _id: { $in: dayIds } }).lean();
+    const dayMap = new Map();
+    days.forEach(d => dayMap.set(d._id.toString(), d));
+
+    const mappedAttendances = attendances.map(a => {
+      const day: any = dayMap.get(a.dayId?.toString());
+      return {
+        ...a,
+        day
+      };
+    });
+
+    mappedAttendances.sort((a, b) => (a.day?.dayNumber || 0) - (b.day?.dayNumber || 0));
 
     let presentCount = 0;
     let absentCount = 0;
-    const timeline = attendances.map(a => {
+    const timeline = mappedAttendances.map(a => {
       if (a.status === 'PRESENT') presentCount++;
       if (a.status === 'ABSENT') absentCount++;
       return {
         dayId: a.dayId,
-        dayNumber: a.day.dayNumber,
-        date: a.day.date,
+        dayNumber: a.day?.dayNumber,
+        date: a.day?.date,
         status: a.status
       };
     });

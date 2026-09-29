@@ -16,8 +16,8 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
   // Build student-level match based on labId and branch
   const studentMatchStage = (labId || branch) ? {
     $match: {
-      ...(labId ? { 'student.labId': toObjectId(labId) } : {}),
-      ...(branch ? { 'student.branch': branch } : {})
+      ...(labId ? { labId: toObjectId(labId) } : {}),
+      ...(branch ? { branch: branch } : {})
     }
   } : null;
 
@@ -26,45 +26,39 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
     $match: { dayId: toObjectId(dayId) }
   } : null;
 
+  // Pre-fetch all days for mapping
+  const allDays = await mongoose.model('Day').find().lean();
+  const dayMap = new Map();
+  allDays.forEach((d: any) => dayMap.set(d._id.toString(), d.dayNumber));
+
   // =====================
   // 1. RETENTION CURVE
   // Applies: labId, branch filters. Ignores: dayId (so you can see trend across all days)
   // =====================
   const retentionPipeline: any[] = [
     { $match: { status: 'PRESENT' } },
-    {
-      $lookup: {
-        from: 'students',
-        localField: 'studentId',
-        foreignField: '_id',
-        as: 'student'
-      }
-    },
-    { $unwind: '$student' },
     ...(studentMatchStage ? [studentMatchStage] : []),
-    {
-      $lookup: {
-        from: 'days',
-        localField: 'dayId',
-        foreignField: '_id',
-        as: 'day'
-      }
-    },
-    { $unwind: '$day' },
     {
       $group: {
         _id: '$dayId',
-        dayNumber: { $first: '$day.dayNumber' },
         present: { $sum: 1 }
       }
-    },
-    { $sort: { dayNumber: 1 } }
+    }
   ];
 
   const retentionRaw = await Attendance.aggregate(retentionPipeline);
-  const retentionCurve = retentionRaw.map(r => ({
-    dayNumber: `Day ${r.dayNumber}`,
+  
+  // Map dayNumber in JS
+  const retentionMapped = retentionRaw.map(r => ({
+    dayNumber: dayMap.get(r._id.toString()) || 0,
     dayId: r._id,
+    present: r.present
+  }));
+  retentionMapped.sort((a, b) => a.dayNumber - b.dayNumber);
+  
+  const retentionCurve = retentionMapped.map(r => ({
+    dayNumber: `Day ${r.dayNumber}`,
+    dayId: r.dayId,
     present: r.present
   }));
 
@@ -74,19 +68,10 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
   // =====================
   const branchPipeline: any[] = [
     { $match: { status: 'PRESENT', ...(dayId ? { dayId: toObjectId(dayId) } : {}) } },
-    {
-      $lookup: {
-        from: 'students',
-        localField: 'studentId',
-        foreignField: '_id',
-        as: 'student'
-      }
-    },
-    { $unwind: '$student' },
-    ...(labId ? [{ $match: { 'student.labId': toObjectId(labId) } }] : []),
+    ...(labId ? [{ $match: { labId: toObjectId(labId) } }] : []),
     {
       $group: {
-        _id: '$student.branch',
+        _id: '$branch',
         present: { $sum: 1 }
       }
     },
@@ -95,7 +80,7 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
 
   const branchRaw = await Attendance.aggregate(branchPipeline);
   const branchContribution = branchRaw.map(b => ({
-    branch: b._id,
+    branch: b._id || 'Unknown',
     present: b.present
   }));
 
@@ -105,20 +90,11 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
   // =====================
   const labPipeline: any[] = [
     ...(dayId ? [{ $match: { dayId: toObjectId(dayId) } }] : []),
-    {
-      $lookup: {
-        from: 'students',
-        localField: 'studentId',
-        foreignField: '_id',
-        as: 'student'
-      }
-    },
-    { $unwind: '$student' },
-    ...(branch ? [{ $match: { 'student.branch': branch } }] : []),
+    ...(branch ? [{ $match: { branch: branch } }] : []),
     {
       $lookup: {
         from: 'labs',
-        localField: 'student.labId',
+        localField: 'labId',
         foreignField: '_id',
         as: 'lab'
       }
@@ -126,7 +102,7 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
     { $unwind: '$lab' },
     {
       $group: {
-        _id: '$lab._id',
+        _id: '$labId',
         labName: { $first: '$lab.name' },
         totalRecords: { $sum: 1 },
         presentRecords: {
@@ -150,21 +126,10 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
   // =====================
   const atRiskPipeline: any[] = [
     ...(dayId ? [{ $match: { dayId: toObjectId(dayId) } }] : []),
-    {
-      $lookup: {
-        from: 'students',
-        localField: 'studentId',
-        foreignField: '_id',
-        as: 'student'
-      }
-    },
-    { $unwind: '$student' },
-    ...(labId ? [{ $match: { 'student.labId': toObjectId(labId) } }] : []),
-    ...(branch ? [{ $match: { 'student.branch': branch } }] : []),
+    ...(studentMatchStage ? [studentMatchStage] : []),
     {
       $group: {
         _id: '$studentId',
-        student: { $first: '$student' },
         total: { $sum: 1 },
         present: { $sum: { $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0] } }
       }
@@ -172,6 +137,11 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
   ];
 
   const studentAttRaw = await Attendance.aggregate(atRiskPipeline);
+
+  const studentIds = studentAttRaw.map(sa => sa._id);
+  const students = await Student.find({ _id: { $in: studentIds } }, '_id rollNo name email branch').lean();
+  const studentMap = new Map();
+  students.forEach((s: any) => studentMap.set(s._id.toString(), s));
 
   // Count eligible students (scoped to filters for denominator)
   const studentQuery: any = {};
@@ -186,14 +156,17 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
     const rate = sa.total > 0 ? (sa.present / sa.total) * 100 : 0;
     if (rate < 80) {
       defaultersCount++;
-      atRiskStudents.push({
-        _id: sa.student._id,
-        rollNo: sa.student.rollNo,
-        name: sa.student.name,
-        email: sa.student.email,
-        branch: sa.student.branch,
-        attendanceRate: Number(rate.toFixed(2))
-      });
+      const student = studentMap.get(sa._id.toString());
+      if (student) {
+        atRiskStudents.push({
+          _id: student._id,
+          rollNo: student.rollNo,
+          name: student.name,
+          email: student.email,
+          branch: student.branch,
+          attendanceRate: Number(rate.toFixed(2))
+        });
+      }
     }
   });
 

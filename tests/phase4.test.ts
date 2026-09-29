@@ -52,7 +52,7 @@ describe('Phase 4 - Attendance System', () => {
 
     const admin = await StaffUser.create({
       name: 'Admin User',
-      email: 'admin.att@test.com',
+      username: 'admin.att@test.com',
       passwordHash: 'password123',
       role: 'SUPER_ADMIN'
     });

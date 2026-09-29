@@ -30,7 +30,7 @@ describe('Phase 3 Endpoints (Lab, Student, Day)', () => {
   beforeAll(async () => {
     const user = await StaffUser.create({
       name: 'Super Admin',
-      email: 'super@admin.com',
+      username: 'super@admin.com',
       passwordHash: 'xx',
       role: 'SUPER_ADMIN',
       active: true

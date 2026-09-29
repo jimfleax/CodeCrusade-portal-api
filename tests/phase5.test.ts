@@ -27,7 +27,7 @@ describe('Phase 5 Endpoints (Dashboard)', () => {
   beforeAll(async () => {
     const user = await StaffUser.create({
       name: 'Super Admin',
-      email: 'super_dash@admin.com',
+      username: 'super_dash@admin.com',
       passwordHash: 'xx',
       role: 'SUPER_ADMIN',
       active: true

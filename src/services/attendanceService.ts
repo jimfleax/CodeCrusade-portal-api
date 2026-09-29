@@ -64,19 +64,30 @@ export const bulkUpsertAttendance = async (
     throw new ValidationError('One or more invalid student IDs in payload');
   }
 
-  const bulkOps = attendanceData.map(record => ({
-    updateOne: {
-      filter: {
-        dayId: new mongoose.Types.ObjectId(dayId),
-        studentId: new mongoose.Types.ObjectId(record.studentId)
-      },
-      update: {
-        $set: { status: record.status, updatedBy: new mongoose.Types.ObjectId(staffUserId) },
-        $setOnInsert: { markedBy: new mongoose.Types.ObjectId(staffUserId) }
-      },
-      upsert: true
-    }
-  }));
+  const studentMap = new Map();
+  studentsFromDb.forEach(s => studentMap.set(s._id.toString(), s));
+
+  const bulkOps = attendanceData.map(record => {
+    const student = studentMap.get(record.studentId);
+    return {
+      updateOne: {
+        filter: {
+          dayId: new mongoose.Types.ObjectId(dayId),
+          studentId: new mongoose.Types.ObjectId(record.studentId)
+        },
+        update: {
+          $set: { 
+            status: record.status, 
+            updatedBy: new mongoose.Types.ObjectId(staffUserId),
+            labId: student?.labId,
+            branch: student?.branch
+          },
+          $setOnInsert: { markedBy: new mongoose.Types.ObjectId(staffUserId) }
+        },
+        upsert: true
+      }
+    };
+  });
 
   return await Attendance.bulkWrite(bulkOps);
 };
@@ -114,7 +125,7 @@ export const markMissingAsAbsent = async (dayId: string, staffUserId: string, la
     studentQuery = { labId: { $nin: frozenLabIds } };
   }
 
-  const allStudents = await Student.find(studentQuery, '_id');
+  const allStudents = await Student.find(studentQuery, '_id labId branch');
   const existingRecords = await Attendance.find({ dayId }, 'studentId');
   const existingStudentIds = new Set(existingRecords.map(r => r.studentId.toString()));
   const missingStudents = allStudents.filter(s => !existingStudentIds.has(s._id.toString()));
@@ -128,6 +139,8 @@ export const markMissingAsAbsent = async (dayId: string, staffUserId: string, la
           document: {
             studentId: student._id,
             dayId: new mongoose.Types.ObjectId(dayId),
+            labId: student.labId,
+            branch: student.branch,
             status: 'ABSENT',
             markedBy: new mongoose.Types.ObjectId(staffUserId)
           }

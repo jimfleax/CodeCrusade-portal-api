@@ -28,7 +28,7 @@ describe('Auth Endpoints', () => {
       const passwordHash = await bcrypt.hash('password123', 10);
       const user = await StaffUser.create({
         name: 'Test Admin',
-        email: 'admin@test.com',
+        username: 'admin@test.com',
         passwordHash,
         role: 'SUPER_ADMIN',
         active: true
@@ -36,12 +36,12 @@ describe('Auth Endpoints', () => {
 
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'admin@test.com', password: 'password123' });
+        .send({ username: 'admin@test.com', password: 'password123' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.token).toBeDefined();
-      expect(res.body.data.user.email).toBe('admin@test.com');
+      expect(res.body.data.user.username).toBe('admin@test.com');
       expect(res.body.data.user.passwordHash).toBeUndefined(); // ensure not exposed
     });
 
@@ -49,7 +49,7 @@ describe('Auth Endpoints', () => {
       const passwordHash = await bcrypt.hash('password123', 10);
       await StaffUser.create({
         name: 'Test Admin',
-        email: 'admin@test.com',
+        username: 'admin@test.com',
         passwordHash,
         role: 'SUPER_ADMIN',
         active: true
@@ -57,7 +57,7 @@ describe('Auth Endpoints', () => {
 
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'admin@test.com', password: 'wrongpassword' });
+        .send({ username: 'admin@test.com', password: 'wrongpassword' });
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
@@ -68,7 +68,7 @@ describe('Auth Endpoints', () => {
       const passwordHash = await bcrypt.hash('password123', 10);
       await StaffUser.create({
         name: 'Test Admin',
-        email: 'admin@test.com',
+        username: 'admin@test.com',
         passwordHash,
         role: 'SUPER_ADMIN',
         active: false // Inactive
@@ -76,7 +76,7 @@ describe('Auth Endpoints', () => {
 
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'admin@test.com', password: 'password123' });
+        .send({ username: 'admin@test.com', password: 'password123' });
 
       expect(res.status).toBe(401);
       expect(res.body.error.code).toBe('INACTIVE_USER');
@@ -91,7 +91,7 @@ describe('Auth Endpoints', () => {
       await StaffUser.create({
         _id: decoded.id,
         name: 'Test',
-        email: 't@t.com',
+        username: 't@t.com',
         passwordHash: 'xx',
         role: 'SUPER_ADMIN',
         active: true
@@ -115,7 +115,7 @@ describe('Auth Endpoints', () => {
     it('should return user details when authenticated', async () => {
       const user = await StaffUser.create({
         name: 'Test',
-        email: 'me@t.com',
+        username: 'me@t.com',
         passwordHash: 'xx',
         role: 'SUPER_ADMIN',
         active: true
@@ -128,7 +128,7 @@ describe('Auth Endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.user.email).toBe('me@t.com');
+      expect(res.body.data.user.username).toBe('me@t.com');
     });
 
     it('should return 401 for invalid token', async () => {
