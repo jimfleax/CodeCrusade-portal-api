@@ -9,18 +9,45 @@ export const createLab = async (data: Partial<ILab>) => {
 };
 
 export const getLabs = async (queryString: any = {}) => {
-  const features = new APIFeatures(Lab.find(), queryString)
-    .filter()
-    .sort()
-    .limitFields();
-
-  const total = await Lab.countDocuments(features.query.getFilter());
-  
-  features.paginate();
-  const labs = await features.query;
-  
   const page = parseInt(queryString.page as string, 10) || 1;
   const limit = parseInt(queryString.limit as string, 10) || 10;
+  const skip = (page - 1) * limit;
+
+  // Build match stage from query if needed (excluding special fields like page, limit, sort)
+  const queryObj = { ...queryString };
+  const excludedFields = ['page', 'sort', 'limit', 'fields'];
+  excludedFields.forEach(el => delete queryObj[el]);
+  
+  // Advanced filtering can be added here if needed, keeping it simple for now
+  const matchStage = Object.keys(queryObj).length > 0 ? { $match: queryObj } : { $match: {} };
+
+  const total = await Lab.countDocuments(matchStage.$match);
+  
+  const labs = await Lab.aggregate([
+    matchStage,
+    {
+      $lookup: {
+        from: 'students',
+        localField: '_id',
+        foreignField: 'labId',
+        as: 'students'
+      }
+    },
+    {
+      $addFields: {
+        studentCount: { $size: '$students' },
+        id: '$_id'
+      }
+    },
+    {
+      $project: {
+        students: 0 // Remove the full array, we only need the count
+      }
+    },
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit }
+  ]);
   
   return {
     data: labs,

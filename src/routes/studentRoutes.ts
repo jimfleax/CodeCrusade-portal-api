@@ -20,8 +20,8 @@ const validateStudent = [
 router.get('/', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.getStudents);
 router.get('/:id', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.getStudentById);
 
-router.post('/', authorize('SUPER_ADMIN'), validateStudent, studentController.createStudent);
-router.put('/:id', authorize('SUPER_ADMIN'), studentController.updateStudent);
-router.delete('/:id', authorize('SUPER_ADMIN'), studentController.deleteStudent);
+router.post('/', authorize('SUPER_ADMIN', 'COORDINATOR'), validateStudent, studentController.createStudent);
+router.put('/:id', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.updateStudent);
+router.delete('/:id', authorize('SUPER_ADMIN', 'COORDINATOR'), studentController.deleteStudent);
 
 export default router;
