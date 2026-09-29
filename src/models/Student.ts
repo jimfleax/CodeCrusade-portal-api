@@ -22,5 +22,6 @@ const StudentSchema: Schema = new Schema({
 
 StudentSchema.index({ labId: 1 });
 StudentSchema.index({ branch: 1 });
+StudentSchema.index({ labId: 1, branch: 1 });
 
 export default mongoose.model<IStudent>('Student', StudentSchema);
