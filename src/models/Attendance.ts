@@ -9,6 +9,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IAttendance extends Document {
   studentId: mongoose.Types.ObjectId;
   dayId: mongoose.Types.ObjectId;
+  labId?: mongoose.Types.ObjectId;
+  branch?: string;
   status: 'PRESENT' | 'ABSENT';
   markedBy: mongoose.Types.ObjectId;
   markedAt: Date;
@@ -20,6 +22,8 @@ export interface IAttendance extends Document {
 const AttendanceSchema: Schema = new Schema({
   studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
   dayId: { type: Schema.Types.ObjectId, ref: 'Day', required: true },
+  labId: { type: Schema.Types.ObjectId, ref: 'Lab' },
+  branch: { type: String },
   status: { type: String, enum: ['PRESENT', 'ABSENT'], required: true },
   markedBy: { type: Schema.Types.ObjectId, ref: 'StaffUser', required: true },
   markedAt: { type: Date, default: Date.now },
