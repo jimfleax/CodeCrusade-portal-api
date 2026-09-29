@@ -73,3 +73,34 @@ export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT',
   await attendance.save();
   return attendance;
 };
+
+export const freezeAttendance = async (dayId: string, staffUserId: string) => {
+  const day = await Day.findById(dayId);
+  if (!day) throw new AppError(404, 'NOT_FOUND', 'Day not found');
+  if (day.status === 'COMPLETED') throw new AppError(400, 'BAD_REQUEST', 'Day is already completed/frozen');
+
+  const allStudents = await Student.find({}, '_id');
+  const existingRecords = await Attendance.find({ dayId }, 'studentId');
+  
+  const existingStudentIds = new Set(existingRecords.map(r => r.studentId.toString()));
+  const missingStudents = allStudents.filter(s => !existingStudentIds.has(s._id.toString()));
+
+  if (missingStudents.length > 0) {
+    const bulkOps = missingStudents.map(student => ({
+      insertOne: {
+        document: {
+          studentId: student._id,
+          dayId: new mongoose.Types.ObjectId(dayId),
+          status: 'ABSENT',
+          markedBy: new mongoose.Types.ObjectId(staffUserId)
+        }
+      }
+    }));
+    await Attendance.bulkWrite(bulkOps);
+  }
+
+  day.status = 'COMPLETED';
+  await day.save();
+
+  return { frozenCount: missingStudents.length };
+};

@@ -44,3 +44,9 @@ export const updateAttendance = asyncHandler(async (req: Request, res: Response)
   const result = await attendanceService.updateAttendance(req.params.id as string, req.body.status, staffUserId);
   res.status(200).json({ success: true, data: result });
 });
+
+export const freezeAttendance = asyncHandler(async (req: Request, res: Response) => {
+  const staffUserId = (req as any).user._id || (req as any).user.id;
+  const result = await attendanceService.freezeAttendance(req.params.dayId as string, staffUserId);
+  res.status(200).json({ success: true, data: result });
+});
