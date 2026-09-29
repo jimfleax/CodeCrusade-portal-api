@@ -11,12 +11,18 @@ import { connectDB } from './config/db';
 import { errorHandler, notFound } from './middlewares/errorMiddleware';
 import routes from './routes';
 
-// Connect to MongoDB
-// In serverless environments, it's often better to connect only when needed 
-// or maintain a cached connection, but for this boilerplate we'll call it here.
-connectDB();
-
+// Global DB Connection Middleware
 const app: Application = express();
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.set('query parser', 'extended');
 
 // Trust proxy for express-rate-limit when behind reverse proxies like Vercel
@@ -27,6 +33,12 @@ app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Ensure req.body is never undefined to prevent destructuring crashes
+app.use((req, res, next) => {
+  req.body = req.body || {};
+  next();
+});
 
 // Express 5 makes req.query a getter-only property.
 // xss-clean and express-mongo-sanitize try to reassign it, causing crashes.

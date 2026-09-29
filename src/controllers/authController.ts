@@ -25,7 +25,8 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
         _id: user._id,
         name: user.name,
         username: user.username,
-        role: user.role
+        role: user.role,
+        labId: (user as any).labId ?? null
       },
       token
     }
@@ -48,7 +49,8 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
         _id: user._id,
         name: user.name,
         username: user.username,
-        role: user.role
+        role: user.role,
+        labId: user.labId ?? null
       }
     }
   });

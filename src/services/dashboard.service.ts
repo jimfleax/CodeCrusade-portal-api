@@ -158,6 +158,10 @@ export class DashboardService {
     ]);
     const labTotals = new Map(labStats.map(ls => [ls._id?.toString(), ls.total]));
 
+    // Fetch day for lab freeze info
+    const day = dayId ? await Day.findById(dayId).lean() : null;
+    const frozenLabIds = new Set((day?.labFreezes ?? []).map((f: any) => f.labId.toString()));
+
     const atts = await Attendance.aggregate([
       { $match: matchStage },
       {
@@ -187,30 +191,31 @@ export class DashboardService {
         students: labTotals.get(labIdStr) || 0,
         present: 0,
         absent: 0,
-        daysMap: new Map() // dayId -> { present, absent }
+        daysMap: new Map()
       });
     });
 
     atts.forEach(a => {
       const labId = a._id.labId?.toString();
-      const dayId = a._id.dayId?.toString();
-      if (!labId || !dayId) return;
+      const dayIdStr = a._id.dayId?.toString();
+      if (!labId || !dayIdStr) return;
 
       const l = labData.get(labId);
       if (l) {
         l.present += a.present;
         l.absent += a.absent;
-        if (!l.daysMap.has(dayId)) l.daysMap.set(dayId, { present: 0, absent: 0 });
-        l.daysMap.get(dayId).present += a.present;
-        l.daysMap.get(dayId).absent += a.absent;
+        if (!l.daysMap.has(dayIdStr)) l.daysMap.set(dayIdStr, { present: 0, absent: 0 });
+        l.daysMap.get(dayIdStr).present += a.present;
+        l.daysMap.get(dayIdStr).absent += a.absent;
       }
     });
 
     return Array.from(labData.values()).map((l: any) => {
       const totalAtts = l.present + l.absent;
       const attendanceRate = totalAtts > 0 ? (l.present / totalAtts) * 100 : 0;
-      
-      const daysArray = Array.from(l.daysMap.entries()).map((entry: any) => { const [dId, stats] = entry;
+
+      const daysArray = Array.from(l.daysMap.entries()).map((entry: any) => {
+        const [dId, stats] = entry;
         const dTotal = stats.present + stats.absent;
         return {
           dayId: dId,
@@ -225,10 +230,12 @@ export class DashboardService {
         present: l.present,
         absent: l.absent,
         attendanceRate: Number(attendanceRate.toFixed(2)),
+        isFrozen: frozenLabIds.has(l.labId),
         days: daysArray
       };
     });
   }
+
 
   static async getStudent(studentId: string) {
     if (!mongoose.Types.ObjectId.isValid(studentId)) {

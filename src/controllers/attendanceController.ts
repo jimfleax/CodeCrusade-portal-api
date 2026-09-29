@@ -29,7 +29,7 @@ export const getDayAttendance = asyncHandler(async (req: Request, res: Response)
 });
 
 export const bulkUpsertAttendance = asyncHandler(async (req: Request, res: Response) => {
-  const staffUserId = (req as any).user._id || (req as any).user.id; 
+  const staffUserId = (req as any).user._id || (req as any).user.id;
   const result = await attendanceService.bulkUpsertAttendance(req.params.dayId as string, req.body.attendanceData, staffUserId);
   res.status(200).json({ success: true, data: result });
 });
@@ -42,6 +42,7 @@ export const updateAttendance = asyncHandler(async (req: Request, res: Response)
 
 export const markMissingAsAbsent = asyncHandler(async (req: Request, res: Response) => {
   const staffUserId = (req as any).user._id || (req as any).user.id;
-  const result = await attendanceService.markMissingAsAbsent(req.params.dayId as string, staffUserId);
+  const { labId } = req.body || {};
+  const result = await attendanceService.markMissingAsAbsent(req.params.dayId as string, staffUserId, labId);
   res.status(200).json({ success: true, data: result });
 });

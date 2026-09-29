@@ -9,7 +9,13 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getStudents = asyncHandler(async (req: Request, res: Response) => {
-  const result = await studentService.getStudents(req.query);
+  const reqUser = (req as any).user;
+  const query: any = { ...req.query };
+  // Force-scope to coordinator's assigned lab regardless of client query params
+  if (reqUser.role === 'COORDINATOR' && reqUser.labId) {
+    query.labId = reqUser.labId.toString();
+  }
+  const result = await studentService.getStudents(query);
   res.status(200).json({ status: 'success', data: result.data, meta: result.meta });
 });
 

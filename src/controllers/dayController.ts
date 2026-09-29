@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import * as dayService from '../services/dayService';
+import { assertLabAccess } from '../utils/assertLabAccess';
 
 export const createDay = asyncHandler(async (req: Request, res: Response) => {
   const { dayNumber, date, title, status } = req.body;
@@ -41,4 +42,20 @@ export const freezeDay = asyncHandler(async (req: Request, res: Response) => {
 export const unfreezeDay = asyncHandler(async (req: Request, res: Response) => {
   const day = await dayService.unfreezeDay(req.params.id as string);
   res.status(200).json({ status: 'success', data: day });
+});
+
+export const freezeLabAttendance = asyncHandler(async (req: Request, res: Response) => {
+  const dayId = req.params.dayId as string;
+  const labId = req.params.labId as string;
+  assertLabAccess((req as any).user, labId);
+  const day = await dayService.freezeLab(dayId, labId);
+  res.status(200).json({ success: true, data: day });
+});
+
+export const unfreezeLabAttendance = asyncHandler(async (req: Request, res: Response) => {
+  const dayId = req.params.dayId as string;
+  const labId = req.params.labId as string;
+  assertLabAccess((req as any).user, labId);
+  const day = await dayService.unfreezeLab(dayId, labId);
+  res.status(200).json({ success: true, data: day });
 });
