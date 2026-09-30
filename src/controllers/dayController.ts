@@ -3,8 +3,15 @@ import { asyncHandler } from '../utils/asyncHandler';
 import * as dayService from '../services/dayService';
 import { assertLabAccess } from '../utils/assertLabAccess';
 import { cache } from '../utils/cache';
+import { ForbiddenError } from '../utils/errors';
 
 export const createDay = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    throw new ForbiddenError('Only main coordinators can start a new session.');
+  }
+
   const { dayNumber, date, title, status } = req.body;
   const day = await dayService.createDay({ dayNumber, date, title, status });
   cache.delPattern(/analytics|dashboard/);
