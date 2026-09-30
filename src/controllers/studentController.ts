@@ -28,7 +28,15 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getStudentById = asyncHandler(async (req: Request, res: Response) => {
+  const reqUser = (req as any).user;
   const student = await studentService.getStudentById(req.params.id as string);
+  
+  if (reqUser && reqUser.role === 'COORDINATOR' && reqUser.labId) {
+    if (student.labId?.toString() !== reqUser.labId.toString()) {
+      throw new ForbiddenError('You can only view students assigned to your own lab.');
+    }
+  }
+
   res.status(200).json({ status: 'success', data: student });
 });
 

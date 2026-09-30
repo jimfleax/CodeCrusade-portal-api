@@ -46,12 +46,20 @@ export const deleteDay = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const freezeDay = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    throw new ForbiddenError('Only main coordinators can freeze the entire session.');
+  }
   const day = await dayService.freezeDay(req.params.id as string);
   cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ status: 'success', data: day });
 });
 
 export const unfreezeDay = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    throw new ForbiddenError('Only main coordinators can unfreeze the entire session.');
+  }
   const day = await dayService.unfreezeDay(req.params.id as string);
   cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ status: 'success', data: day });

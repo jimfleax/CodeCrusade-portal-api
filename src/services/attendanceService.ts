@@ -40,14 +40,17 @@ export const getStudentAttendance = async (studentId: string) => {
   return Attendance.find({ studentId }).populate('dayId markedBy updatedBy');
 };
 
-export const getDayAttendance = async (dayId: string) => {
-  return Attendance.find({ dayId }).populate('studentId markedBy updatedBy');
+export const getDayAttendance = async (dayId: string, labId?: string) => {
+  const query: any = { dayId };
+  if (labId) query.labId = new mongoose.Types.ObjectId(labId);
+  return Attendance.find(query).populate('studentId markedBy updatedBy');
 };
 
 export const bulkUpsertAttendance = async (
   dayId: string,
   attendanceData: { studentId: string; status: 'PRESENT' | 'ABSENT' }[],
-  staffUserId: string
+  staffUserId: string,
+  staffLabId?: string
 ) => {
   const day = await Day.findById(dayId);
   if (!day) throw new NotFoundError('Day not found');
@@ -67,10 +70,13 @@ export const bulkUpsertAttendance = async (
   const studentMap = new Map();
   studentsFromDb.forEach(s => studentMap.set(s._id.toString(), s));
 
-  // Check if any student's lab is frozen
+  // Check if any student's lab is frozen or if staff lacks access
   for (const record of attendanceData) {
     const student = studentMap.get(record.studentId);
     if (student?.labId) {
+      if (staffLabId && student.labId.toString() !== staffLabId) {
+        throw new ValidationError(`Cannot update attendance for student ${student.name} because they belong to a different lab`);
+      }
       const isLabFrozen = day.labFreezes?.some(f => f.labId.toString() === student.labId.toString());
       if (isLabFrozen) {
         throw new ValidationError(`Cannot update attendance for student ${student.name} because their lab is frozen`);
@@ -103,7 +109,7 @@ export const bulkUpsertAttendance = async (
   return await Attendance.bulkWrite(bulkOps);
 };
 
-export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string) => {
+export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string, staffLabId?: string) => {
   const attendance = await Attendance.findById(id).populate('dayId');
   if (!attendance) throw new NotFoundError('Attendance not found');
 
@@ -113,6 +119,9 @@ export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT',
   }
 
   if (attendance.labId) {
+    if (staffLabId && attendance.labId.toString() !== staffLabId) {
+      throw new ValidationError('You can only update attendance for students in your own lab.');
+    }
     const isLabFrozen = day.labFreezes?.some((f: any) => f.labId.toString() === attendance.labId?.toString());
     if (isLabFrozen) {
       throw new ValidationError('Attendance for this lab is frozen');

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { DashboardService } from '../services/dashboard.service';
 import { cache } from '../utils/cache';
+import { ForbiddenError } from '../utils/errors';
 
 export const getOverview = asyncHandler(async (req: Request, res: Response) => {
   const cacheKey = `dashboard:overview:${req.originalUrl}`;
@@ -35,13 +36,26 @@ export const getLabs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getStudent = asyncHandler(async (req: Request, res: Response) => {
-  const cacheKey = `dashboard:student:${req.originalUrl}`;
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) return res.status(200).json({ success: true, data: cachedData });
-
   const studentId = req.params.studentId as string;
-  const data = await DashboardService.getStudent(studentId);
-  cache.set(cacheKey, data);
+  const user = (req as any).user;
+  const cacheKey = `dashboard:student:${req.originalUrl}`;
+  
+  let data;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) {
+    data = cachedData;
+  } else {
+    data = await DashboardService.getStudent(studentId);
+    cache.set(cacheKey, data);
+  }
+
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    const studentLabId = data.student.labId?._id?.toString() || data.student.labId?.toString();
+    if (studentLabId !== user.labId.toString()) {
+      throw new ForbiddenError('You can only view students assigned to your own lab.');
+    }
+  }
+
   res.status(200).json({ success: true, data });
 });
 
