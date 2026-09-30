@@ -47,7 +47,7 @@ async function migrateAttendance() {
       if (!studentData) {
         const student = await Student.findById(doc.studentId).lean();
         if (student) {
-          studentData = { labId: student.labId, branch: student.branch };
+          studentData = { labId: student.labs?.[0], branch: student.branch };
           studentCache.set(studentIdStr, studentData);
         }
       }

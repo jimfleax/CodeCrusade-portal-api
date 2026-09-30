@@ -97,23 +97,23 @@ describe('Phase 3 Endpoints (Lab, Student, Day)', () => {
   });
 
   describe('Student Endpoints', () => {
-    let labId: string;
+    let labs: string[];
     beforeEach(async () => {
       const lab = await Lab.create({ name: 'Lab 1', code: 'L1' });
-      labId = (lab._id as mongoose.Types.ObjectId).toString();
+      labs = [(lab._id as mongoose.Types.ObjectId).toString()];
     });
 
     it('should create a student', async () => {
       const res = await request(app)
         .post('/api/students')
         .set('Authorization', `Bearer ${token}`)
-        .send({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labId });
+        .send({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labs });
       expect(res.status).toBe(201);
       expect(res.body.data.rollNo).toBe('123');
     });
 
     it('should get students', async () => {
-      await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labId });
+      await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labs });
       const res = await request(app)
         .get('/api/students')
         .set('Authorization', `Bearer ${token}`);
@@ -122,7 +122,7 @@ describe('Phase 3 Endpoints (Lab, Student, Day)', () => {
     });
 
     it('should get a student by id', async () => {
-      const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labId });
+      const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labs });
       const res = await request(app)
         .get(`/api/students/${student._id}`)
         .set('Authorization', `Bearer ${token}`);
@@ -131,7 +131,7 @@ describe('Phase 3 Endpoints (Lab, Student, Day)', () => {
     });
 
     it('should update a student', async () => {
-      const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labId });
+      const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labs });
       const res = await request(app)
         .put(`/api/students/${student._id}`)
         .set('Authorization', `Bearer ${token}`)
@@ -141,7 +141,7 @@ describe('Phase 3 Endpoints (Lab, Student, Day)', () => {
     });
 
     it('should delete a student', async () => {
-      const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labId });
+      const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labs });
       const res = await request(app)
         .delete(`/api/students/${student._id}`)
         .set('Authorization', `Bearer ${token}`);

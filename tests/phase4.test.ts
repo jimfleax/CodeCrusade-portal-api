@@ -41,6 +41,7 @@ describe('Phase 4 - Attendance System', () => {
   let student1Id: string;
   let student2Id: string;
   let dayId: string;
+  let labIdStr: string;
   let attendance1Id: string;
 
   beforeAll(async () => {
@@ -72,13 +73,14 @@ describe('Phase 4 - Attendance System', () => {
       code: 'L1',
       description: 'Lab 1 desc'
     });
+    labIdStr = (lab._id as any).toString();
 
     const student1 = await Student.create({
       rollNo: 'R1',
       name: 'S1',
       email: 's1@test.com',
       branch: 'CS',
-      labId: lab._id
+      labs: [labIdStr]
     });
     student1Id = (student1._id as any).toString();
 
@@ -87,7 +89,7 @@ describe('Phase 4 - Attendance System', () => {
       name: 'S2',
       email: 's2@test.com',
       branch: 'CS',
-      labId: lab._id
+      labs: [labIdStr]
     });
     student2Id = (student2._id as any).toString();
   });
@@ -133,12 +135,13 @@ describe('Phase 4 - Attendance System', () => {
       .put(`/api/attendance/day/${dayId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        labId: labIdStr,
         attendanceData: [
           { studentId: student1Id, status: 'PRESENT' },
           { studentId: student2Id, status: 'ABSENT' }
         ]
       });
-    expect(res.status).toBe(200);
+    if(res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
@@ -147,7 +150,7 @@ describe('Phase 4 - Attendance System', () => {
     const res = await request(app)
       .get(`/api/attendance/day/${dayId}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(res.status).toBe(200);
+    if(res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(2);
     attendance1Id = res.body.data[0]._id;
   });
@@ -157,8 +160,8 @@ describe('Phase 4 - Attendance System', () => {
     const res = await request(app)
       .patch(`/api/attendance/${attendance1Id}`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ status: 'ABSENT' });
-    expect(res.status).toBe(200);
+      .send({ status: 'ABSENT', labId: labIdStr });
+    if(res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('ABSENT');
   });
 
@@ -167,7 +170,7 @@ describe('Phase 4 - Attendance System', () => {
     const res = await request(app)
       .get('/api/attendance')
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(res.status).toBe(200);
+    if(res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(2);
   });
 
@@ -176,7 +179,7 @@ describe('Phase 4 - Attendance System', () => {
     const res = await request(app)
       .get(`/api/attendance/${attendance1Id}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(res.status).toBe(200);
+    if(res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
     expect(res.body.data._id).toBe(attendance1Id);
   });
 
@@ -185,7 +188,7 @@ describe('Phase 4 - Attendance System', () => {
     const res = await request(app)
       .get(`/api/attendance/student/${student1Id}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(res.status).toBe(200);
+    if(res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
     expect(res.body.data.length).toBeGreaterThan(0);
   });
 });

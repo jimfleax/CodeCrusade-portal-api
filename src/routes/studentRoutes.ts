@@ -13,7 +13,8 @@ const validateStudent = [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('branch').notEmpty().withMessage('Branch is required'),
-  body('labId').isMongoId().withMessage('Valid lab ID is required'),
+  body('labs').isArray().withMessage('Labs array is required'),
+  body('labs.*').isMongoId().withMessage('Valid lab ID is required in labs array'),
   validateRequest
 ];
 

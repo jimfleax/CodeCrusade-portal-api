@@ -8,7 +8,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import * as attendanceService from '../services/attendanceService';
 import { cache } from '../utils/cache';
-import { ForbiddenError } from '../utils/errors';
+import { ForbiddenError, ValidationError } from '../utils/errors';
 
 export const getAttendances = asyncHandler(async (req: Request, res: Response) => {
   const user = (req as any).user;
@@ -51,8 +51,13 @@ export const getDayAttendance = asyncHandler(async (req: Request, res: Response)
 export const bulkUpsertAttendance = asyncHandler(async (req: Request, res: Response) => {
   const user = (req as any).user;
   const staffUserId = user._id || user.id;
-  const staffLabId = (user && user.role === 'COORDINATOR' && user.labId) ? user.labId.toString() : undefined;
-  const result = await attendanceService.bulkUpsertAttendance(req.params.dayId as string, req.body.attendanceData, staffUserId, staffLabId);
+  const targetLabId = (user && user.role === 'COORDINATOR' && user.labId) ? user.labId.toString() : req.body.labId;
+  
+  if (!targetLabId) {
+    throw new ValidationError('labId is required to update attendance.');
+  }
+
+  const result = await attendanceService.bulkUpsertAttendance(req.params.dayId as string, req.body.attendanceData, staffUserId, targetLabId);
   cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ success: true, data: result });
 });
@@ -60,8 +65,13 @@ export const bulkUpsertAttendance = asyncHandler(async (req: Request, res: Respo
 export const updateAttendance = asyncHandler(async (req: Request, res: Response) => {
   const user = (req as any).user;
   const staffUserId = user._id || user.id;
-  const staffLabId = (user && user.role === 'COORDINATOR' && user.labId) ? user.labId.toString() : undefined;
-  const result = await attendanceService.updateAttendance(req.params.id as string, req.body.status, staffUserId, staffLabId);
+  const targetLabId = (user && user.role === 'COORDINATOR' && user.labId) ? user.labId.toString() : req.body.labId;
+
+  if (!targetLabId) {
+    throw new ValidationError('labId is required to update attendance.');
+  }
+
+  const result = await attendanceService.updateAttendance(req.params.id as string, req.body.status, staffUserId, targetLabId);
   cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ success: true, data: result });
 });

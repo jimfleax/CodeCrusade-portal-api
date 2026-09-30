@@ -5,7 +5,7 @@ export interface IStudent extends Document {
   name: string;
   email: string;
   branch: string;
-  labId: mongoose.Types.ObjectId;
+  labs: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,13 +15,13 @@ const StudentSchema: Schema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   branch: { type: String, required: true },
-  labId: { type: Schema.Types.ObjectId, ref: 'Lab', required: true }
+  labs: [{ type: Schema.Types.ObjectId, ref: 'Lab' }]
 }, {
   timestamps: true
 });
 
-StudentSchema.index({ labId: 1 });
+StudentSchema.index({ labs: 1 });
 StudentSchema.index({ branch: 1 });
-StudentSchema.index({ labId: 1, branch: 1 });
+StudentSchema.index({ labs: 1, branch: 1 });
 
 export default mongoose.model<IStudent>('Student', StudentSchema);

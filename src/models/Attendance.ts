@@ -32,7 +32,7 @@ const AttendanceSchema: Schema = new Schema({
   timestamps: true
 });
 
-AttendanceSchema.index({ studentId: 1, dayId: 1 }, { unique: true });
+AttendanceSchema.index({ studentId: 1, dayId: 1, labId: 1 }, { unique: true });
 AttendanceSchema.index({ dayId: 1 });
 AttendanceSchema.index({ status: 1 });
 AttendanceSchema.index({ markedBy: 1 });

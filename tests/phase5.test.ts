@@ -46,14 +46,21 @@ describe('Phase 5 Endpoints (Dashboard)', () => {
     await Attendance.deleteMany({});
   });
 
+  afterEach(async () => {
+    await Student.deleteMany({});
+    await Lab.deleteMany({});
+    await Day.deleteMany({});
+    await Attendance.deleteMany({});
+  });
+
   async function seedData() {
     const lab = await Lab.create({ name: 'Lab 1', code: 'L1' });
-    const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labId: lab._id });
-    const student2 = await Student.create({ rollNo: '124', name: 'Jane Doe', email: 'jane@doe.com', branch: 'IT', labId: lab._id });
+    const student = await Student.create({ rollNo: '123', name: 'John Doe', email: 'john@doe.com', branch: 'CS', labs: [lab._id] });
+    const student2 = await Student.create({ rollNo: '124', name: 'Jane Doe', email: 'jane@doe.com', branch: 'IT', labs: [lab._id] });
     const day = await Day.create({ dayNumber: 1, date: new Date(), title: 'Day 1', status: 'COMPLETED' });
     
-    await Attendance.create({ dayId: day._id, studentId: student._id, status: 'PRESENT', markedBy: new mongoose.Types.ObjectId() });
-    await Attendance.create({ dayId: day._id, studentId: student2._id, status: 'ABSENT', markedBy: new mongoose.Types.ObjectId() });
+    await Attendance.create({ dayId: day._id, labId: lab._id, studentId: student._id, status: 'PRESENT', markedBy: new mongoose.Types.ObjectId() });
+    await Attendance.create({ dayId: day._id, labId: lab._id, studentId: student2._id, status: 'ABSENT', markedBy: new mongoose.Types.ObjectId() });
     return { lab, student, student2, day };
   }
 

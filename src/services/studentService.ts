@@ -18,7 +18,7 @@ export const getStudents = async (queryString: any = {}) => {
   const total = await Student.countDocuments(features.query.getFilter());
   
   features.paginate();
-  const students = await features.query.populate('labId');
+  const students = await features.query.populate('labs');
   
   const studentIds = students.map((s: any) => s._id);
   const attendanceStats = await Attendance.aggregate([
@@ -53,7 +53,7 @@ export const getStudents = async (queryString: any = {}) => {
 };
 
 export const getStudentById = async (id: string) => {
-  const student = await Student.findById(id).populate('labId');
+  const student = await Student.findById(id).populate('labs');
   if (!student) throw new NotFoundError('Student not found');
   return student;
 };

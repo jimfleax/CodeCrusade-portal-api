@@ -29,7 +29,7 @@ export const getLabs = async (queryString: any = {}) => {
       $lookup: {
         from: 'students',
         localField: '_id',
-        foreignField: 'labId',
+        foreignField: 'labs',
         as: 'students'
       }
     },
@@ -76,7 +76,7 @@ export const deleteLab = async (id: string) => {
   const lab = await Lab.findById(id);
   if (!lab) throw new NotFoundError('Lab not found');
   
-  const studentCount = await Student.countDocuments({ labId: id });
+  const studentCount = await Student.countDocuments({ labs: id });
   if (studentCount > 0) {
     throw new ValidationError('Cannot delete lab with assigned students');
   }

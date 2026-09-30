@@ -50,7 +50,7 @@ export const bulkUpsertAttendance = async (
   dayId: string,
   attendanceData: { studentId: string; status: 'PRESENT' | 'ABSENT' }[],
   staffUserId: string,
-  staffLabId?: string
+  targetLabId: string
 ) => {
   const day = await Day.findById(dayId);
   if (!day) throw new NotFoundError('Day not found');
@@ -73,11 +73,11 @@ export const bulkUpsertAttendance = async (
   // Check if any student's lab is frozen or if staff lacks access
   for (const record of attendanceData) {
     const student = studentMap.get(record.studentId);
-    if (student?.labId) {
-      if (staffLabId && student.labId.toString() !== staffLabId) {
-        throw new ValidationError(`Cannot update attendance for student ${student.name} because they belong to a different lab`);
+    if (student?.labs) {
+      if (!student.labs.some((l: any) => l.toString() === targetLabId)) {
+        throw new ValidationError(`Cannot update attendance for student ${student.name} because they do not belong to the target lab`);
       }
-      const isLabFrozen = day.labFreezes?.some(f => f.labId.toString() === student.labId.toString());
+      const isLabFrozen = day.labFreezes?.some((f: any) => f.labId.toString() === targetLabId);
       if (isLabFrozen) {
         throw new ValidationError(`Cannot update attendance for student ${student.name} because their lab is frozen`);
       }
@@ -90,13 +90,14 @@ export const bulkUpsertAttendance = async (
       updateOne: {
         filter: {
           dayId: new mongoose.Types.ObjectId(dayId),
-          studentId: new mongoose.Types.ObjectId(record.studentId)
+          studentId: new mongoose.Types.ObjectId(record.studentId),
+          labId: new mongoose.Types.ObjectId(targetLabId)
         },
         update: {
           $set: { 
             status: record.status, 
             updatedBy: new mongoose.Types.ObjectId(staffUserId),
-            labId: student?.labId,
+            labId: new mongoose.Types.ObjectId(targetLabId),
             branch: student?.branch
           },
           $setOnInsert: { markedBy: new mongoose.Types.ObjectId(staffUserId) }
@@ -109,7 +110,7 @@ export const bulkUpsertAttendance = async (
   return await Attendance.bulkWrite(bulkOps);
 };
 
-export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string, staffLabId?: string) => {
+export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string, targetLabId: string) => {
   const attendance = await Attendance.findById(id).populate('dayId');
   if (!attendance) throw new NotFoundError('Attendance not found');
 
@@ -119,8 +120,8 @@ export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT',
   }
 
   if (attendance.labId) {
-    if (staffLabId && attendance.labId.toString() !== staffLabId) {
-      throw new ValidationError('You can only update attendance for students in your own lab.');
+    if (attendance.labId.toString() !== targetLabId) {
+      throw new ValidationError('You can only update attendance for the specified lab.');
     }
     const isLabFrozen = day.labFreezes?.some((f: any) => f.labId.toString() === attendance.labId?.toString());
     if (isLabFrozen) {
@@ -146,34 +147,46 @@ export const markMissingAsAbsent = async (dayId: string, staffUserId: string, la
 
   let studentQuery: any = {};
   if (labId) {
-    studentQuery = { labId: new mongoose.Types.ObjectId(labId) };
+    studentQuery = { labs: new mongoose.Types.ObjectId(labId) };
   } else if (day.labFreezes.length > 0) {
     // Global call: skip students in already-frozen labs
     const frozenLabIds = day.labFreezes.map(f => f.labId);
-    studentQuery = { labId: { $nin: frozenLabIds } };
+    studentQuery = { labs: { $nin: frozenLabIds } };
   }
 
-  const allStudents = await Student.find(studentQuery, '_id labId branch');
-  const existingRecords = await Attendance.find({ dayId }, 'studentId');
-  const existingStudentIds = new Set(existingRecords.map(r => r.studentId.toString()));
-  const missingStudents = allStudents.filter(s => !existingStudentIds.has(s._id.toString()));
+  const allStudents = await Student.find(studentQuery, '_id labs branch');
+  const existingRecords = await Attendance.find({ dayId }, 'studentId labId');
+  const existingSet = new Set(existingRecords.map(r => `${r.studentId.toString()}-${r.labId?.toString()}`));
 
-  if (missingStudents.length > 0) {
+  const bulkOps = [];
+  for (const student of allStudents) {
+    if (!student.labs) continue;
+    for (const sLab of student.labs) {
+      if (labId && sLab.toString() !== labId) continue;
+      if (!labId && day.labFreezes.some((f: any) => f.labId.toString() === sLab.toString())) continue;
+
+      const key = `${student._id.toString()}-${sLab.toString()}`;
+      if (!existingSet.has(key)) {
+        bulkOps.push({
+          insertOne: {
+            document: {
+              studentId: student._id,
+              dayId: new mongoose.Types.ObjectId(dayId),
+              labId: sLab,
+              branch: student.branch,
+              status: 'ABSENT',
+              markedBy: new mongoose.Types.ObjectId(staffUserId)
+            }
+          }
+        });
+      }
+    }
+  }
+
+  if (bulkOps.length > 0) {
     const session = await mongoose.startSession();
     try {
       session.startTransaction();
-      const bulkOps = missingStudents.map(student => ({
-        insertOne: {
-          document: {
-            studentId: student._id,
-            dayId: new mongoose.Types.ObjectId(dayId),
-            labId: student.labId,
-            branch: student.branch,
-            status: 'ABSENT',
-            markedBy: new mongoose.Types.ObjectId(staffUserId)
-          }
-        }
-      }));
       await Attendance.bulkWrite(bulkOps, { session });
       await session.commitTransaction();
     } catch (error) {
@@ -184,5 +197,5 @@ export const markMissingAsAbsent = async (dayId: string, staffUserId: string, la
     }
   }
 
-  return { markedCount: missingStudents.length };
+  return { markedCount: bulkOps.length };
 };

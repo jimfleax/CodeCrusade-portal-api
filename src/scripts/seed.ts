@@ -179,7 +179,7 @@ async function seedStudents(labIds: mongoose.Types.ObjectId[]): Promise<mongoose
         name: fullName,
         email,
         branch,
-        labId,
+        labs: [labId],
       });
       ids.push(student._id as mongoose.Types.ObjectId);
       rollCounter++;

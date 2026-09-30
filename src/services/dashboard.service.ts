@@ -145,7 +145,8 @@ export class DashboardService {
 
     const labs = await Lab.find().lean();
     const labStats = await Student.aggregate([
-      { $group: { _id: "$labId", total: { $sum: 1 } } }
+      { $unwind: "$labs" },
+      { $group: { _id: "$labs", total: { $sum: 1 } } }
     ]);
     const labTotals = new Map(labStats.map(ls => [ls._id?.toString(), ls.total]));
 
@@ -224,7 +225,7 @@ export class DashboardService {
       throw new ValidationError('Invalid student ID');
     }
 
-    const student = await Student.findById(studentId).populate('labId', 'name').lean();
+    const student = await Student.findById(studentId).populate('labs', 'name').lean();
     if (!student) {
       throw new NotFoundError('Student not found');
     }
@@ -269,7 +270,7 @@ export class DashboardService {
         rollNo: student.rollNo,
         email: student.email,
         branch: student.branch,
-        lab: student.labId
+        labs: student.labs
       },
       overallAttendanceRate: Number(overallAttendanceRate.toFixed(2)),
       presentCount,
@@ -282,7 +283,7 @@ export class DashboardService {
   static async getMatrix(labId?: string, branch?: string, dayId?: string) {
     const studentMatch: any = {};
     if (labId && mongoose.Types.ObjectId.isValid(labId)) {
-      studentMatch.labId = new mongoose.Types.ObjectId(labId);
+      studentMatch.labs = new mongoose.Types.ObjectId(labId);
     }
     if (branch) {
       studentMatch.branch = branch;
