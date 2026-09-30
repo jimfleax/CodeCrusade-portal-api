@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { checkHealth, clearCache } from '../controllers/healthController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/authMiddleware';
 
 const router = Router();
 
