@@ -148,7 +148,7 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
 
   // Count eligible students (scoped to filters for denominator)
   const studentQuery: any = {};
-  if (labId) studentQuery.labId = toObjectId(labId);
+  if (labId) studentQuery.labs = toObjectId(labId);
   if (branch) studentQuery.branch = branch;
   const totalStudentsCount = await Student.countDocuments(studentQuery);
 

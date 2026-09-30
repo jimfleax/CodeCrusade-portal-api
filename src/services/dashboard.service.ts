@@ -73,7 +73,8 @@ export class DashboardService {
 
   static async getDays() {
     const labStats = await Student.aggregate([
-      { $group: { _id: "$labId", total: { $sum: 1 } } }
+      { $unwind: "$labs" },
+      { $group: { _id: "$labs", total: { $sum: 1 } } }
     ]);
     const labTotals = new Map(labStats.map(ls => [ls._id?.toString(), ls.total]));
     const totalStudents = await Student.countDocuments();
