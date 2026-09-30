@@ -33,10 +33,11 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
 
   // =====================
   // 1. RETENTION CURVE
-  // Applies: labId, branch filters. Ignores: dayId (so you can see trend across all days)
+  // Applies: labId, branch, dayId filters.
   // =====================
   const retentionPipeline: any[] = [
     { $match: { status: 'PRESENT' } },
+    ...(dayId ? [{ $match: { dayId: toObjectId(dayId) } }] : []),
     ...(studentMatchStage ? [studentMatchStage] : []),
     {
       $group: {
@@ -64,11 +65,12 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
 
   // =====================
   // 2. BRANCH CONTRIBUTION
-  // Applies: dayId, labId filters. Ignores: branch (so you can compare branches)
+  // Applies: dayId, labId, branch filters.
   // =====================
   const branchPipeline: any[] = [
     { $match: { status: 'PRESENT', ...(dayId ? { dayId: toObjectId(dayId) } : {}) } },
     ...(labId ? [{ $match: { labId: toObjectId(labId) } }] : []),
+    ...(branch ? [{ $match: { branch: branch } }] : []),
     {
       $group: {
         _id: '$branch',
@@ -86,11 +88,12 @@ export const getAnalyticsData = async (filters: AnalyticsFilters = {}) => {
 
   // =====================
   // 3. LAB UTILIZATION
-  // Applies: dayId, branch filters. Ignores: labId (so you can compare all labs)
+  // Applies: dayId, branch, labId filters.
   // =====================
   const labPipeline: any[] = [
     ...(dayId ? [{ $match: { dayId: toObjectId(dayId) } }] : []),
     ...(branch ? [{ $match: { branch: branch } }] : []),
+    ...(labId ? [{ $match: { labId: toObjectId(labId) } }] : []),
     {
       $lookup: {
         from: 'labs',

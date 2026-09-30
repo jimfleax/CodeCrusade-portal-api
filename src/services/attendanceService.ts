@@ -67,6 +67,17 @@ export const bulkUpsertAttendance = async (
   const studentMap = new Map();
   studentsFromDb.forEach(s => studentMap.set(s._id.toString(), s));
 
+  // Check if any student's lab is frozen
+  for (const record of attendanceData) {
+    const student = studentMap.get(record.studentId);
+    if (student?.labId) {
+      const isLabFrozen = day.labFreezes?.some(f => f.labId.toString() === student.labId.toString());
+      if (isLabFrozen) {
+        throw new ValidationError(`Cannot update attendance for student ${student.name} because their lab is frozen`);
+      }
+    }
+  }
+
   const bulkOps = attendanceData.map(record => {
     const student = studentMap.get(record.studentId);
     return {
@@ -96,8 +107,16 @@ export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT',
   const attendance = await Attendance.findById(id).populate('dayId');
   if (!attendance) throw new NotFoundError('Attendance not found');
 
-  if ((attendance.dayId as any).status === 'COMPLETED') {
+  const day = attendance.dayId as any;
+  if (day.status === 'COMPLETED') {
     throw new ValidationError('Attendance is frozen for this day');
+  }
+
+  if (attendance.labId) {
+    const isLabFrozen = day.labFreezes?.some((f: any) => f.labId.toString() === attendance.labId?.toString());
+    if (isLabFrozen) {
+      throw new ValidationError('Attendance for this lab is frozen');
+    }
   }
 
   attendance.status = status;

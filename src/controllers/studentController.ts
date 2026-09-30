@@ -2,8 +2,14 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import * as studentService from '../services/studentService';
 import { cache } from '../utils/cache';
+import { ForbiddenError } from '../utils/errors';
 
 export const createStudent = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    throw new ForbiddenError('Only main coordinators can create a student.');
+  }
+
   const { rollNo, name, email, branch, labId } = req.body;
   const student = await studentService.createStudent({ rollNo, name, email, branch, labId });
   cache.delPattern(/analytics|dashboard/);
@@ -27,6 +33,11 @@ export const getStudentById = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateStudent = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    throw new ForbiddenError('Only main coordinators can update a student.');
+  }
+
   const { name, email, branch, labId } = req.body;
   const data: any = {};
   if (name) data.name = name;
@@ -39,6 +50,11 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const deleteStudent = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (user && user.role === 'COORDINATOR' && user.labId) {
+    throw new ForbiddenError('Only main coordinators can delete a student.');
+  }
+
   await studentService.deleteStudent(req.params.id as string);
   cache.delPattern(/analytics|dashboard/);
   res.status(204).send();
