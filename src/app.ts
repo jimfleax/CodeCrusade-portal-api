@@ -28,7 +28,6 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // DB connection — runs after CORS so preflights never block on cold starts
 app.use(async (req, res, next) => {
