@@ -22,9 +22,9 @@ export const getStudents = async (queryString: any = {}) => {
   
   const studentIds = students.map((s: any) => s._id);
   const attendanceStats = await Attendance.aggregate([
-    { $match: { student: { $in: studentIds } } },
+    { $match: { studentId: { $in: studentIds } } },
     { $group: { 
-      _id: '$student', 
+      _id: '$studentId', 
       total: { $sum: 1 }, 
       present: { $sum: { $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0] } } 
     } }
