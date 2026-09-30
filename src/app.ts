@@ -14,6 +14,23 @@ import routes from './routes';
 // Global DB Connection Middleware
 const app: Application = express();
 
+app.set('query parser', 'extended');
+
+// Trust proxy for express-rate-limit when behind reverse proxies like Vercel
+app.set('trust proxy', 1);
+
+// CORS — MUST be the absolute first middleware so OPTIONS preflight
+// requests are answered immediately without waiting for DB connection
+const corsOptions = {
+  origin: config.corsOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// DB connection — runs after CORS so preflights never block on cold starts
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -23,20 +40,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.set('query parser', 'extended');
-
-// Trust proxy for express-rate-limit when behind reverse proxies like Vercel
-app.set('trust proxy', 1);
-
-// CORS — must run before helmet and all other middleware
-const corsOptions = {
-  origin: config.corsOrigin,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle all OPTIONS preflight requests
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
