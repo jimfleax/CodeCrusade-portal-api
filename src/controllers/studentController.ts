@@ -19,6 +19,13 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
 export const getStudents = asyncHandler(async (req: Request, res: Response) => {
   const reqUser = (req as any).user;
   const query: any = { ...req.query };
+  
+  // Remap labId to labs since Student schema now uses an array of labs
+  if (query.labId) {
+    query.labs = query.labId;
+    delete query.labId;
+  }
+
   // Force-scope to coordinator's assigned lab regardless of client query params
   if (reqUser.role === 'COORDINATOR' && reqUser.labId) {
     query.labs = reqUser.labId.toString();
