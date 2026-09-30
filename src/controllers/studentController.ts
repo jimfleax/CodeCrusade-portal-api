@@ -56,7 +56,11 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
   const { name, email, branch, labs, rollNo } = req.body;
   const data: any = {};
   if (name) data.name = name;
-  if (email) data.email = email;
+  if (email === "") {
+    data.$unset = { email: 1 };
+  } else if (email !== undefined) {
+    data.email = email;
+  }
   if (branch) data.branch = branch;
   if (labs) data.labs = labs;
   if (rollNo) data.rollNo = rollNo;

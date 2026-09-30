@@ -14,7 +14,7 @@ import { config } from '../config/env';
  *   - 1 Super Admin + 2 Coordinators
  *   - 6 Labs (Lab A – Lab F)
  *   - 180 Students (30 per lab)
- *   - 7 Workshop Days (Day 1–3 COMPLETED, Day 4 ACTIVE, Day 5–7 UPCOMING)
+ *   - 7 Workshop Days (Day 1–3 COMPLETED, Day 4-7 ACTIVE)
  *   - Attendance for the 3 completed days (~85 % present rate)
  *
  * Idempotent: skips seeding if data already exists.
@@ -131,9 +131,9 @@ async function seedDays(): Promise<mongoose.Types.ObjectId[]> {
     { dayNumber: 2, title: 'Day 2 – Control Flow & Functions',    status: 'COMPLETED' as const },
     { dayNumber: 3, title: 'Day 3 – Data Structures',             status: 'COMPLETED' as const },
     { dayNumber: 4, title: 'Day 4 – OOP in Python',               status: 'ACTIVE'    as const },
-    { dayNumber: 5, title: 'Day 5 – File I/O & Exceptions',       status: 'UPCOMING'  as const },
-    { dayNumber: 6, title: 'Day 6 – Libraries & APIs',            status: 'UPCOMING'  as const },
-    { dayNumber: 7, title: 'Day 7 – Capstone Project',            status: 'UPCOMING'  as const },
+    { dayNumber: 5, title: 'Day 5 – File I/O & Exceptions',       status: 'ACTIVE'    as const },
+    { dayNumber: 6, title: 'Day 6 – Libraries & APIs',            status: 'ACTIVE'    as const },
+    { dayNumber: 7, title: 'Day 7 – Capstone Project',            status: 'ACTIVE'    as const },
   ];
 
   const ids: mongoose.Types.ObjectId[] = [];

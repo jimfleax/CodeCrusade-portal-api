@@ -107,7 +107,18 @@ export const bulkUpsertAttendance = async (
     };
   });
 
-  return await Attendance.bulkWrite(bulkOps);
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+    const result = await Attendance.bulkWrite(bulkOps, { session });
+    await session.commitTransaction();
+    return result;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 export const updateAttendance = async (id: string, status: 'PRESENT' | 'ABSENT', staffUserId: string, targetLabId: string) => {

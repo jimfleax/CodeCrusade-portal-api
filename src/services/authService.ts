@@ -1,22 +1,22 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import StaffUser, { IStaffUser } from '../models/StaffUser';
-import { AuthenticationError } from '../utils/errors';
+import { AuthenticationError, ApplicationError } from '../utils/errors';
 import { config } from '../config/env';
 
 export const authService = {
   async login(username: string, password: string):Promise<{ user: IStaffUser, token: string }> {
     const user = await StaffUser.findOne({ username }).select('+passwordHash');
     if (!user) {
-      throw new AuthenticationError('Invalid username or password');
+      throw new ApplicationError('Invalid username or password', 'INVALID_CREDENTIALS', 401);
     }
     if (!user.active) {
-      throw new AuthenticationError('User account is inactive');
+      throw new ApplicationError('User account is inactive', 'INACTIVE_USER', 401);
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      throw new AuthenticationError('Invalid username or password');
+      throw new ApplicationError('Invalid username or password', 'INVALID_CREDENTIALS', 401);
     }
 
     const token = jwt.sign(

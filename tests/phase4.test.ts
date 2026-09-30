@@ -64,7 +64,7 @@ describe('Phase 4 - Attendance System', () => {
       dayNumber: 1,
       date: new Date(),
       title: 'Day 1',
-      status: 'UPCOMING'
+      status: 'ACTIVE'
     });
     dayId = (day._id as any).toString();
 

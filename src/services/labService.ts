@@ -1,5 +1,8 @@
 import Lab, { ILab } from '../models/Lab';
 import Student from '../models/Student';
+import Attendance from '../models/Attendance';
+import StaffUser from '../models/StaffUser';
+import Day from '../models/Day';
 import { ValidationError, NotFoundError } from '../utils/errors';
 
 import { APIFeatures } from '../utils/apiFeatures';
@@ -79,6 +82,21 @@ export const deleteLab = async (id: string) => {
   const studentCount = await Student.countDocuments({ labs: id });
   if (studentCount > 0) {
     throw new ValidationError('Cannot delete lab with assigned students');
+  }
+
+  const attendanceCount = await Attendance.countDocuments({ labId: id });
+  if (attendanceCount > 0) {
+    throw new ValidationError('Cannot delete lab with associated attendance records');
+  }
+
+  const staffCount = await StaffUser.countDocuments({ labId: id });
+  if (staffCount > 0) {
+    throw new ValidationError('Cannot delete lab with assigned staff users');
+  }
+
+  const dayCount = await Day.countDocuments({ 'labFreezes.labId': id });
+  if (dayCount > 0) {
+    throw new ValidationError('Cannot delete lab with historical lab freezes');
   }
   
   await lab.deleteOne();

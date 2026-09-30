@@ -4,7 +4,7 @@ export interface IDay extends Document {
   dayNumber: number;
   date: Date;
   title: string;
-  status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED';
+  status: 'ACTIVE' | 'COMPLETED';
   labFreezes: Array<{ labId: mongoose.Types.ObjectId; frozenAt: Date }>;
   createdAt: Date;
   updatedAt: Date;
@@ -14,7 +14,7 @@ const DaySchema: Schema = new Schema({
   dayNumber: { type: Number, required: true, unique: true },
   date: { type: Date, required: true },
   title: { type: String, required: true },
-  status: { type: String, enum: ['UPCOMING', 'ACTIVE', 'COMPLETED'], default: 'UPCOMING' },
+  status: { type: String, enum: ['ACTIVE', 'COMPLETED'], default: 'ACTIVE' },
   labFreezes: {
     type: [{
       labId: { type: Schema.Types.ObjectId, ref: 'Lab', required: true },
