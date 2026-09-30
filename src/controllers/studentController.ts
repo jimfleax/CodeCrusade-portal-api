@@ -53,12 +53,13 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
     throw new ForbiddenError('Only main coordinators can update a student.');
   }
 
-  const { name, email, branch, labs } = req.body;
+  const { name, email, branch, labs, rollNo } = req.body;
   const data: any = {};
   if (name) data.name = name;
   if (email) data.email = email;
   if (branch) data.branch = branch;
   if (labs) data.labs = labs;
+  if (rollNo) data.rollNo = rollNo;
   const student = await studentService.updateStudent(req.params.id as string, data);
   cache.delPattern(/analytics|dashboard/);
   res.status(200).json({ status: 'success', data: student });
