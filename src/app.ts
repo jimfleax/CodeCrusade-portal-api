@@ -28,9 +28,16 @@ app.set('query parser', 'extended');
 // Trust proxy for express-rate-limit when behind reverse proxies like Vercel
 app.set('trust proxy', 1);
 
-// Middleware
+// CORS — must run before helmet and all other middleware
+const corsOptions = {
+  origin: config.corsOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle all OPTIONS preflight requests
 app.use(helmet());
-app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
