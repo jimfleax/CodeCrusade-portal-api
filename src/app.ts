@@ -8,7 +8,7 @@ const xss = require('xss-clean');
 
 import { config } from './config/env';
 import { connectDB } from './config/db';
-import { errorHandler, notFound } from './middlewares/errorMiddleware';
+import { errorHandler, notFound } from './middleware/errorMiddleware';
 import routes from './routes';
 
 // Global DB Connection Middleware

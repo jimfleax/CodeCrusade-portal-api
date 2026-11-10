@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Student from '../models/Student';
-import { logger } from './logger';
+import { logger } from '../utils/logger';
 
 export const migrateLabs = async () => {
   try {
@@ -22,14 +22,14 @@ export const migrateLabs = async () => {
           filter: { _id: student._id },
           update: {
             $set: { labs: [student.labId] },
-            $unset: { labId: "" }
+            $unset: { labId: 1 }
           }
         }
       };
     });
 
     if (bulkOps.length > 0) {
-      await Student.bulkWrite(bulkOps);
+      await (Student as any).bulkWrite(bulkOps as any);
       logger.info(`Successfully migrated ${count} students to use labs array.`);
     }
   } catch (error) {

@@ -32,5 +32,8 @@ coverage/
 .specs/
 
 # Scripts and Temp folders
-scripts/
-temp/
+/scripts/
+/temp/
+
+# Scratch and temporary files
+id*.txt

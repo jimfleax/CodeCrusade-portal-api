@@ -13,7 +13,7 @@ import StaffUser from '../src/models/StaffUser';
 import Student from '../src/models/Student';
 import Lab from '../src/models/Lab';
 import Day from '../src/models/Day';
-import { errorHandler } from '../src/middlewares/errorMiddleware';
+import { errorHandler } from '../src/middleware/errorMiddleware';
 
 const app = express();
 app.use(express.json());

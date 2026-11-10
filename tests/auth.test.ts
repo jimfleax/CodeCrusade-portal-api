@@ -9,7 +9,7 @@ config();
 
 import authRoutes from '../src/routes/authRoutes';
 import StaffUser from '../src/models/StaffUser';
-import { errorHandler } from '../src/middlewares/errorMiddleware';
+import { errorHandler } from '../src/middleware/errorMiddleware';
 
 const app = express();
 app.use(express.json());
