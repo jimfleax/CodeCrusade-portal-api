@@ -34,6 +34,7 @@ coverage/
 # Scripts and Temp folders
 /scripts/
 /temp/
+research/
 
 # Scratch and temporary files
 id*.txt
